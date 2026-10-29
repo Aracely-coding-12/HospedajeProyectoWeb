@@ -1,3 +1,24 @@
+@font-face {
+  font-family: 'Pirata One';
+  src: url('./assets/fonts/pirata-one.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.brand-font {
+  font-family: 'Pirata One', Georgia, 'Times New Roman', serif;
+}
+
+.brand-glow {
+  filter: drop-shadow(0 0 14px rgba(245, 200, 66, 0.28));
+}
+
+.emblem-mask {
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 58%, transparent 82%);
+  mask-image: radial-gradient(circle at 50% 45%, #000 58%, transparent 82%);
+}
+
 :root {
   --text: #a8a29e;
   --text-h: #fafaf9;
@@ -45,35 +66,6 @@ body {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
 }
 
 code,
