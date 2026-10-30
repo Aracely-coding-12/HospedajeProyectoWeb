@@ -347,7 +347,7 @@ function LoginForm({ onLogin, onCreateAccount }) {
 
         <div>
           <label htmlFor="login-password" className={labelClass}>
-            Contraseña:
+            Password:
           </label>
           <div className="relative">
             <input
