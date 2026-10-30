@@ -328,7 +328,7 @@ function LoginForm({ onLogin, onCreateAccount }) {
       <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
         <div>
           <label htmlFor="login-email" className={labelClass}>
-            Correo electrónico:
+            Correo:
           </label>
           <input
             id="login-email"
