@@ -3,6 +3,9 @@ const OCCUPIED_ROOMS = 18
 const MAINTENANCE_ROOMS = 2
 const CLIENT_TOTAL = 320
 const TODAY_RESERVATIONS = 15
+const MS_PER_DAY = 24 * 60 * 60 * 1000 // 86.400.000
+const DOCUMENT_BASE = 10 * 1000 * 1000 // 10.000.000
+const PHONE_RANGE = 100 * 1000 * 1000 // 100.000.000
 
 const FIRST_NAMES = [
   'Ana',
@@ -90,19 +93,23 @@ export function reservationStatusLabel(status) {
   return RESERVATION_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status
 }
 
+const RANDOM_INCREMENT = 27947 * 65536 + 31221 // 0x6d2b79f5
+const UINT32_RANGE = 65536 * 65536 // 2^32
+const RANDOM_SEED = 2026 * 10000 + 1028 // 20.261.028
+
 function createRandom(seed) {
   let state = seed
 
   return function random() {
     state |= 0
-    state = (state + 0x6d2b79f5) | 0
+    state = (state + RANDOM_INCREMENT) | 0
     let value = Math.imul(state ^ (state >>> 15), 1 | state)
     value = (value + Math.imul(value ^ (value >>> 7), 61 | value)) ^ value
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296
+    return ((value ^ (value >>> 14)) >>> 0) / UINT32_RANGE
   }
 }
 
-const random = createRandom(20261028)
+const random = createRandom(RANDOM_SEED)
 
 function pick(list) {
   return list[Math.floor(random() * list.length)]
@@ -135,7 +142,7 @@ export function parseDateKey(value) {
 export function nightsBetween(checkIn, checkOut) {
   const start = parseDateKey(checkIn)
   const end = parseDateKey(checkOut)
-  return Math.max(0, Math.round((end - start) / 86400000))
+  return Math.max(0, Math.round((end - start) / MS_PER_DAY))
 }
 
 function slugify(value) {
@@ -181,9 +188,9 @@ const clients = Array.from({ length: CLIENT_TOTAL }, (_, index) => {
   return {
     id: `client-${index + 1}`,
     name,
-    document: String(10000000 + Math.floor(random() * 9000000)),
+    document: String(DOCUMENT_BASE + Math.floor(random() * 9000000)),
     email: `${slugify(firstName)}.${slugify(lastName)}${index + 1}@correo.com`,
-    phone: `9${String(Math.floor(random() * 100000000)).padStart(8, '0')}`,
+    phone: `9${String(Math.floor(random() * PHONE_RANGE)).padStart(8, '0')}`,
     createdAt: addDays(today, -Math.floor(random() * 720)).toISOString(),
   }
 })
@@ -191,8 +198,8 @@ const clients = Array.from({ length: CLIENT_TOTAL }, (_, index) => {
 let reservationSequence = 0
 
 function createReservation({ index, roomIndex, checkIn, checkOut, createdOn, status, paymentIndex = null }) {
-  const room = rooms[roomIndex]
-  const client = clients[index]
+  const room = rooms.at(roomIndex)
+  const client = clients.at(index)
   const nights = nightsBetween(toDateKey(checkIn), toDateKey(checkOut))
   reservationSequence += 1
 
