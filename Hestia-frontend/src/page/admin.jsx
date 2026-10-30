@@ -1,13 +1,28 @@
 import { useState } from 'react'
 import hestiaEmblem from '../assets/hestia-emblem.png'
-import { addReservationToData, buildDashboardSummary, createInitialData } from '../data/hestiaData.js'
+import {
+  addReservationToData,
+  addRoomToData,
+  buildDashboardSummary,
+  buildReservationSummary,
+  cancelReservationInData,
+  confirmReservationInData,
+  createInitialData,
+  deleteReservationFromData,
+  deleteRoomFromData,
+  rejectReservationInData,
+  updateReservationInData,
+  updateRoomInData,
+  updateRoomStatusInData,
+} from '../data/hestiaData.js'
+import Habitaciones from './habitaciones.jsx'
 import Inicio from './inicio.jsx'
-import NuevaReserva from './nueva-reserva.jsx'
+import Reservas from './reserva.jsx'
 
 const NAV_ITEMS = [
   { id: 'inicio', label: 'Inicio', view: 'inicio' },
-  { id: 'reserva', label: 'Reserva', view: 'nueva-reserva' },
-  { id: 'habitaciones', label: 'Habitaciones' },
+  { id: 'reserva', label: 'Reserva', view: 'reserva' },
+  { id: 'habitaciones', label: 'Habitaciones', view: 'habitaciones' },
   { id: 'clientes', label: 'Clientes' },
   { id: 'pagos', label: 'Pagos' },
   { id: 'adicionales', label: 'S. Adicionales' },
@@ -130,6 +145,7 @@ function Admin({ session, onLogout }) {
   const [notice, setNotice] = useState(null)
 
   const summary = buildDashboardSummary(data)
+  const reservationSummary = buildReservationSummary(data)
 
   function navigate(nextView) {
     setNotice(null)
@@ -137,12 +153,44 @@ function Admin({ session, onLogout }) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  function handleSaveReservation(input) {
-    const nextData = addReservationToData(data, input)
-    setData(nextData)
-    setView('inicio')
-    setNotice('Reserva registrada correctamente. El resumen se actualizó.')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  function handleCreateReservation(input) {
+    setData(addReservationToData(data, input))
+  }
+
+  function handleUpdateReservation(input) {
+    setData(updateReservationInData(data, input))
+  }
+
+  function handleConfirmReservation(reservationId) {
+    setData(confirmReservationInData(data, reservationId))
+  }
+
+  function handleRejectReservation(reservationId) {
+    setData(rejectReservationInData(data, reservationId))
+  }
+
+  function handleCancelReservation(reservationId) {
+    setData(cancelReservationInData(data, reservationId))
+  }
+
+  function handleDeleteReservation(reservationId) {
+    setData(deleteReservationFromData(data, reservationId))
+  }
+
+  function handleCreateRoom(input) {
+    setData(addRoomToData(data, input))
+  }
+
+  function handleUpdateRoom(input) {
+    setData(updateRoomInData(data, input))
+  }
+
+  function handleDeleteRoom(roomId) {
+    setData(deleteRoomFromData(data, roomId))
+  }
+
+  function handleRoomStatusChange(roomId, status) {
+    setData(updateRoomStatusInData(data, roomId, status))
   }
 
   return (
@@ -161,19 +209,34 @@ function Admin({ session, onLogout }) {
 
         <main className="flex-1 px-4 pb-12 pt-5 sm:px-8 lg:px-12">
           <div className="mx-auto w-full max-w-6xl">
-            {view === 'nueva-reserva' ? (
-              <NuevaReserva
-                clients={data.clients}
+            {view === 'reserva' ? (
+              <Reservas
+                reservations={data.reservations}
                 rooms={data.rooms}
-                onCancel={() => navigate('inicio')}
-                onSave={handleSaveReservation}
+                clients={data.clients}
+                payments={data.payments}
+                summary={reservationSummary}
+                onCreateReservation={handleCreateReservation}
+                onUpdateReservation={handleUpdateReservation}
+                onConfirmReservation={handleConfirmReservation}
+                onRejectReservation={handleRejectReservation}
+                onCancelReservation={handleCancelReservation}
+                onDeleteReservation={handleDeleteReservation}
+              />
+            ) : view === 'habitaciones' ? (
+              <Habitaciones
+                rooms={data.rooms}
+                onCreateRoom={handleCreateRoom}
+                onUpdateRoom={handleUpdateRoom}
+                onDeleteRoom={handleDeleteRoom}
+                onStatusChange={handleRoomStatusChange}
               />
             ) : (
               <Inicio
                 summary={summary}
                 notice={notice}
                 onDismissNotice={() => setNotice(null)}
-                onCreateReservation={() => navigate('nueva-reserva')}
+                onCreateReservation={() => navigate('reserva')}
               />
             )}
           </div>

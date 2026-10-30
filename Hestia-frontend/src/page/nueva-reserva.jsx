@@ -32,7 +32,7 @@ function FieldError({ id, children }) {
 
 function NuevaReserva({ clients, rooms, onCancel, onSave }) {
   const currentToday = todayKey()
-  const availableRooms = rooms.filter((room) => room.status !== 'ocupada')
+  const availableRooms = rooms.filter((room) => room.status === 'disponible')
   const [form, setForm] = useState({
     clientId: '',
     roomId: '',
