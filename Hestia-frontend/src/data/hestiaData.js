@@ -72,14 +72,25 @@ const ROOM_DESCRIPTIONS = {
     'Suite amplia con sala de estar, cama king, baño privado, Wi-Fi, TV y vista al jardín. Incluye desayuno.',
 }
 
-const PAYMENT_AMOUNTS = [40, 60, 50, 80, 70, 90, 60, 50, 70, 80, 60, 50, 80, 70, 90]
-const STATUS_LABELS = {
-  pendiente: 'Pendiente',
-  confirmada: 'Confirmada',
-  finalizada: 'Finalizada',
-  cancelada: 'Cancelada',
-  rechazada: 'Rechazada',
+const DEFAULT_ROOM_IMAGE_BY_TYPE = new Map(Object.entries(DEFAULT_ROOM_IMAGES))
+const ROOM_DESCRIPTION_BY_TYPE = new Map(Object.entries(ROOM_DESCRIPTIONS))
+
+export function defaultRoomImage(type) {
+  return DEFAULT_ROOM_IMAGE_BY_TYPE.get(type)
 }
+
+export function roomDescription(type) {
+  return ROOM_DESCRIPTION_BY_TYPE.get(type)
+}
+
+const PAYMENT_AMOUNTS = [40, 60, 50, 80, 70, 90, 60, 50, 70, 80, 60, 50, 80, 70, 90]
+const STATUS_LABELS = new Map([
+  ['pendiente', 'Pendiente'],
+  ['confirmada', 'Confirmada'],
+  ['finalizada', 'Finalizada'],
+  ['cancelada', 'Cancelada'],
+  ['rechazada', 'Rechazada'],
+])
 
 export const RESERVATION_STATUS_OPTIONS = [
   { value: 'pendiente', label: 'Pendiente' },
@@ -174,8 +185,8 @@ const rooms = Array.from({ length: ROOM_TOTAL }, (_, index) => {
     capacity: type === 'Simple' ? 1 : type === 'Suite' ? 4 : 2,
     price: 120 + (index % 4) * 40,
     status,
-    image: DEFAULT_ROOM_IMAGES[type],
-    description: ROOM_DESCRIPTIONS[type],
+    image: defaultRoomImage(type),
+    description: roomDescription(type),
   }
 })
 
@@ -308,7 +319,7 @@ function presentReservation(reservation, roomList) {
     ...reservation,
     roomNumber: room?.number ?? '—',
     roomType: room?.type ?? '',
-    statusLabel: STATUS_LABELS[reservation.status] ?? reservation.status,
+    statusLabel: STATUS_LABELS.get(reservation.status) ?? reservation.status,
   }
 }
 
@@ -781,8 +792,8 @@ function normalizeRoomInput(data, input, roomId = null) {
     capacity,
     price: Math.round(price * 100) / 100,
     status,
-    image: input.image || DEFAULT_ROOM_IMAGES[input.type],
-    description: String(input.description ?? '').trim() || ROOM_DESCRIPTIONS[input.type],
+    image: input.image || defaultRoomImage(input.type),
+    description: String(input.description ?? '').trim() || roomDescription(input.type),
   }
 }
 

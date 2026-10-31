@@ -17,11 +17,21 @@ const EMPTY_FORM = {
   description: '',
 }
 
-const STATUS_STYLES = {
-  disponible: 'border-emerald-400/50 bg-emerald-400/10 text-emerald-200',
-  ocupada: 'border-amber-400/60 bg-amber-400/10 text-amber-200',
-  mantenimiento: 'border-sky-400/50 bg-sky-400/10 text-sky-200',
-  inactiva: 'border-stone-500/60 bg-stone-500/10 text-stone-400',
+const STATUS_STYLES = new Map([
+  ['disponible', 'border-emerald-400/50 bg-emerald-400/10 text-emerald-200'],
+  ['ocupada', 'border-amber-400/60 bg-amber-400/10 text-amber-200'],
+  ['mantenimiento', 'border-sky-400/50 bg-sky-400/10 text-sky-200'],
+  ['inactiva', 'border-stone-500/60 bg-stone-500/10 text-stone-400'],
+])
+
+function statusStyle(status) {
+  return STATUS_STYLES.get(status) ?? STATUS_STYLES.get('inactiva')
+}
+
+const DEFAULT_ROOM_IMAGE_BY_TYPE = new Map(Object.entries(DEFAULT_ROOM_IMAGES))
+
+function defaultRoomImage(type) {
+  return DEFAULT_ROOM_IMAGE_BY_TYPE.get(type) ?? ''
 }
 
 const fieldClass =
@@ -142,7 +152,7 @@ function RoomStatCard({ label, value, note }) {
 function StatusPill({ status }) {
   return (
     <span
-      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${STATUS_STYLES[status] ?? STATUS_STYLES.inactiva}`}
+      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${statusStyle(status)}`}
     >
       {roomStatusLabel(status)}
     </span>
@@ -152,7 +162,7 @@ function StatusPill({ status }) {
 function StatusSelect({ room, onChange }) {
   return (
     <div
-      className={`relative inline-flex items-center rounded-full border transition focus-within:ring-2 focus-within:ring-amber-300/30 ${STATUS_STYLES[room.status] ?? STATUS_STYLES.inactiva}`}
+      className={`relative inline-flex items-center rounded-full border transition focus-within:ring-2 focus-within:ring-amber-300/30 ${statusStyle(room.status)}`}
     >
       <select
         value={room.status}
@@ -282,7 +292,7 @@ function Habitaciones({ rooms, onCreateRoom, onUpdateRoom, onDeleteRoom, onStatu
     .sort((first, second) => first.number.localeCompare(second.number, 'es', { numeric: true }))
 
   const selectedRoom = rooms.find((room) => room.id === selectedRoomId) ?? rooms[0] ?? null
-  const previewImage = form.image || (form.type ? DEFAULT_ROOM_IMAGES[form.type] : '')
+  const previewImage = form.image || (form.type ? defaultRoomImage(form.type) : '')
 
   function resetForm() {
     setEditingId(null)
@@ -301,13 +311,13 @@ function Habitaciones({ rooms, onCreateRoom, onUpdateRoom, onDeleteRoom, onStatu
     setForm((current) => {
       if (name !== 'type') return { ...current, [name]: value }
 
-      const defaultImages = Object.values(DEFAULT_ROOM_IMAGES)
+      const defaultImages = [...DEFAULT_ROOM_IMAGE_BY_TYPE.values()]
       const hasCustomImage = Boolean(current.image) && !defaultImages.includes(current.image)
 
       return {
         ...current,
         type: value,
-        image: hasCustomImage ? current.image : DEFAULT_ROOM_IMAGES[value] || '',
+        image: hasCustomImage ? current.image : defaultRoomImage(value),
       }
     })
     setFormError(null)
@@ -563,7 +573,7 @@ function Habitaciones({ rooms, onCreateRoom, onUpdateRoom, onDeleteRoom, onStatu
                             className="block overflow-hidden rounded border border-amber-400/20"
                           >
                             <img
-                              src={room.image || DEFAULT_ROOM_IMAGES[room.type]}
+                              src={room.image || defaultRoomImage(room.type)}
                               alt={`Habitación ${room.number}`}
                               loading="lazy"
                               className="h-9 w-14 object-cover"
@@ -629,7 +639,7 @@ function Habitaciones({ rooms, onCreateRoom, onUpdateRoom, onDeleteRoom, onStatu
           {selectedRoom ? (
             <div className="mt-3">
               <img
-                src={selectedRoom.image || DEFAULT_ROOM_IMAGES[selectedRoom.type]}
+                src={selectedRoom.image || defaultRoomImage(selectedRoom.type)}
                 alt={`Habitación ${selectedRoom.number}`}
                 className="aspect-[4/3] w-full rounded border border-amber-400/30 object-cover"
               />

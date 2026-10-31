@@ -15,13 +15,53 @@ import {
   todayKey,
 } from '../lib/format.js'
 
-const STATUS_STYLES = {
-  pendiente: 'border-amber-400/60 bg-amber-400/10 text-amber-200',
-  confirmada: 'border-emerald-400/50 bg-emerald-400/10 text-emerald-200',
-  finalizada: 'border-sky-400/50 bg-sky-400/10 text-sky-200',
-  cancelada: 'border-rose-500/50 bg-rose-500/10 text-rose-200',
-  rechazada: 'border-stone-500/60 bg-stone-500/10 text-stone-300',
+const STATUS_STYLES = new Map([
+  ['pendiente', 'border-amber-400/60 bg-amber-400/10 text-amber-200'],
+  ['confirmada', 'border-emerald-400/50 bg-emerald-400/10 text-emerald-200'],
+  ['finalizada', 'border-sky-400/50 bg-sky-400/10 text-sky-200'],
+  ['cancelada', 'border-rose-500/50 bg-rose-500/10 text-rose-200'],
+  ['rechazada', 'border-stone-500/60 bg-stone-500/10 text-stone-300'],
+])
+
+function statusStyle(status) {
+  return STATUS_STYLES.get(status) ?? STATUS_STYLES.get('rechazada')
 }
+
+const ACTION_CONFIG = new Map([
+  [
+    'reject',
+    (reservation) => ({
+      title: `Rechazar solicitud ${reservation.code}`,
+      description:
+        'La solicitud pasará a Rechazada y la habitación quedará libre para esas fechas. Esta acción no se puede deshacer.',
+      confirmLabel: 'Rechazar solicitud',
+    }),
+  ],
+  [
+    'cancel',
+    (reservation) => ({
+      title: `Cancelar reserva ${reservation.code}`,
+      description:
+        'La reserva pasará a Cancelada y la habitación se liberará para esas fechas. Esta acción no se puede deshacer.',
+      confirmLabel: 'Cancelar reserva',
+    }),
+  ],
+  [
+    'delete',
+    (reservation) => ({
+      title: `Eliminar reserva ${reservation.code}`,
+      description:
+        'Se eliminará el registro del historial. Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+    }),
+  ],
+])
+
+const ACTION_MESSAGES = new Map([
+  ['reject', (reservation) => `Solicitud ${reservation.code} rechazada.`],
+  ['cancel', (reservation) => `Reserva ${reservation.code} cancelada.`],
+  ['delete', (reservation) => `Reserva ${reservation.code} eliminada.`],
+])
 
 const FORM_STATUS_OPTIONS = RESERVATION_STATUS_OPTIONS.filter(
   (option) => option.value === 'pendiente' || option.value === 'confirmada',
@@ -162,9 +202,7 @@ function StatCard({ label, value, note }) {
 function StatusBadge({ status }) {
   return (
     <span
-      className={`inline-flex rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${
-        STATUS_STYLES[status] ?? STATUS_STYLES.rechazada
-      }`}
+      className={`inline-flex rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${statusStyle(status)}`}
     >
       {reservationStatusLabel(status)}
     </span>
@@ -404,26 +442,7 @@ function ActionDialog({ action, onCancel, onConfirm }) {
   const { type, reservation } = action
   const policy = type === 'cancel' ? reservationCancellationPolicy(reservation) : null
 
-  const config = {
-    reject: {
-      title: `Rechazar solicitud ${reservation.code}`,
-      description:
-        'La solicitud pasará a Rechazada y la habitación quedará libre para esas fechas. Esta acción no se puede deshacer.',
-      confirmLabel: 'Rechazar solicitud',
-    },
-    cancel: {
-      title: `Cancelar reserva ${reservation.code}`,
-      description:
-        'La reserva pasará a Cancelada y la habitación se liberará para esas fechas. Esta acción no se puede deshacer.',
-      confirmLabel: 'Cancelar reserva',
-    },
-    delete: {
-      title: `Eliminar reserva ${reservation.code}`,
-      description:
-        'Se eliminará el registro del historial. Esta acción no se puede deshacer.',
-      confirmLabel: 'Eliminar',
-    },
-  }[type]
+  const config = ACTION_CONFIG.get(type)?.(reservation)
 
   return (
     <div
@@ -982,12 +1001,10 @@ function Reservas({
       else if (type === 'cancel') onCancelReservation(reservation.id)
       else if (type === 'delete') onDeleteReservation(reservation.id)
 
-      const messages = {
-        reject: `Solicitud ${reservation.code} rechazada.`,
-        cancel: `Reserva ${reservation.code} cancelada.`,
-        delete: `Reserva ${reservation.code} eliminada.`,
-      }
-      setNotice({ type: 'success', message: messages[type] })
+      setNotice({
+        type: 'success',
+        message: ACTION_MESSAGES.get(type)?.(reservation),
+      })
 
       if (editingId === reservation.id) {
         setEditingId(null)
