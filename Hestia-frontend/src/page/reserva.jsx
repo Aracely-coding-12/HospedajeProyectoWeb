@@ -311,7 +311,7 @@ function ReservationDetail({
             </h3>
             <dl className="mt-3 space-y-2 text-xs">
               <div>
-                <dt className="text-stone-500">Nombre</dt>
+                <dt className="text-stone-500">Nombres</dt>
                 <dd className="mt-0.5 font-medium text-amber-50">
                   {client?.name ?? reservation.guestName}
                 </dd>
@@ -325,7 +325,7 @@ function ReservationDetail({
                 <dd className="mt-0.5 break-all text-stone-200">{client?.email ?? '—'}</dd>
               </div>
               <div>
-                <dt className="text-stone-500">Teléfono</dt>
+                <dt className="text-stone-500">Celular</dt>
                 <dd className="mt-0.5 text-stone-200">{client?.phone ?? '—'}</dd>
               </div>
               <div>
