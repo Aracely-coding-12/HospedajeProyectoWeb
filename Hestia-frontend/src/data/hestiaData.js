@@ -6,6 +6,8 @@ const TODAY_RESERVATIONS = 15
 const MS_PER_DAY = 24 * 60 * 60 * 1000 // 86.400.000
 const DOCUMENT_BASE = 10 * 1000 * 1000 // 10.000.000
 const PHONE_RANGE = 100 * 1000 * 1000 // 100.000.000
+const INACTIVE_CLIENT_EVERY = 15
+const WEB_CLIENT_EVERY = 4
 
 const FIRST_NAMES = [
   'Ana',
@@ -52,6 +54,17 @@ export const ROOM_STATUS_OPTIONS = [
   { value: 'ocupada', label: 'Ocupada' },
   { value: 'mantenimiento', label: 'Mantenimiento' },
   { value: 'inactiva', label: 'Inactiva' },
+]
+
+export const CLIENT_DOCUMENT_TYPES = [
+  { value: 'DNI', label: 'DNI' },
+  { value: 'RUC', label: 'RUC' },
+  { value: 'CE', label: 'Carné de extranjería' },
+]
+
+export const CLIENT_SOURCE_OPTIONS = [
+  { value: 'web', label: 'Página web' },
+  { value: 'admin', label: 'Administrador' },
 ]
 
 export const DEFAULT_ROOM_IMAGES = {
@@ -102,6 +115,57 @@ export const RESERVATION_STATUS_OPTIONS = [
 
 export function reservationStatusLabel(status) {
   return RESERVATION_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status
+}
+
+export const PAYMENT_METHOD_OPTIONS = [
+  { value: 'Efectivo', label: 'Efectivo' },
+  { value: 'Tarjeta', label: 'Tarjeta' },
+  { value: 'Yape', label: 'Yape' },
+  { value: 'Plin', label: 'Plin' },
+  { value: 'Transferencia', label: 'Transferencia bancaria' },
+]
+
+export const PAYMENT_STATUS_OPTIONS = [
+  { value: 'pagado', label: 'Pagado' },
+  { value: 'pendiente', label: 'Pendiente' },
+  { value: 'reembolsado', label: 'Reembolsado' },
+]
+
+const PAYMENT_METHOD_VALUES = new Set(PAYMENT_METHOD_OPTIONS.map((option) => option.value))
+const PAYMENT_STATUS_VALUES = new Set(PAYMENT_STATUS_OPTIONS.map((option) => option.value))
+
+export function paymentMethodLabel(method) {
+  return PAYMENT_METHOD_OPTIONS.find((option) => option.value === method)?.label ?? method
+}
+
+export function paymentStatusLabel(status) {
+  return PAYMENT_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status
+}
+
+export function paymentDateKey(payment) {
+  if (!payment?.paidAt) return ''
+  if (/^\d{4}-\d{2}-\d{2}$/.test(payment.paidAt)) return payment.paidAt
+  return toDateKey(new Date(payment.paidAt))
+}
+
+export function findReservationByNumber(reservations, value) {
+  const raw = String(value ?? '').trim()
+  if (!raw) return null
+
+  const normalized = raw.replace(/^#/, '').trim().toUpperCase()
+  const directMatch = reservations.find(
+    (reservation) => reservation.code.toUpperCase() === normalized,
+  )
+  if (directMatch) return directMatch
+
+  const digits = normalized.replace(/\D/g, '')
+  if (!digits) return null
+
+  return (
+    reservations.find(
+      (reservation) => reservation.code.replace(/\D/g, '') === digits,
+    ) ?? null
+  )
 }
 
 const RANDOM_INCREMENT = 27947 * 65536 + 31221 // 0x6d2b79f5
@@ -199,14 +263,18 @@ const clients = Array.from({ length: CLIENT_TOTAL }, (_, index) => {
   return {
     id: `client-${index + 1}`,
     name,
+    documentType: 'DNI',
     document: String(DOCUMENT_BASE + Math.floor(random() * 9000000)),
     email: `${slugify(firstName)}.${slugify(lastName)}${index + 1}@correo.com`,
     phone: `9${String(Math.floor(random() * PHONE_RANGE)).padStart(8, '0')}`,
+    active: index % INACTIVE_CLIENT_EVERY !== 0,
+    source: index % WEB_CLIENT_EVERY === 0 ? 'web' : 'admin',
     createdAt: addDays(today, -Math.floor(random() * 720)).toISOString(),
   }
 })
 
 let reservationSequence = 0
+let paymentSequence = 0
 
 function createReservation({ index, roomIndex, checkIn, checkOut, createdOn, status, paymentIndex = null }) {
   const room = rooms.at(roomIndex)
@@ -302,12 +370,16 @@ const payments = reservations
   .map((reservation) => {
     const paidAt = new Date(today)
     paidAt.setHours(9 + (reservation.paymentIndex % 10), 15, 0, 0)
+    paymentSequence += 1
 
     return {
       id: `payment-${reservation.id}`,
+      code: `PAG-${String(paymentSequence).padStart(4, '0')}`,
       reservationId: reservation.id,
       amount: PAYMENT_AMOUNTS[reservation.paymentIndex],
-      method: 'Tarjeta',
+      method:
+        PAYMENT_METHOD_OPTIONS[reservation.paymentIndex % PAYMENT_METHOD_OPTIONS.length].value,
+      status: 'pagado',
       paidAt: paidAt.toISOString(),
     }
   })
@@ -342,7 +414,11 @@ export function buildDashboardSummary(data, now = new Date()) {
       toDateKey(new Date(reservation.createdAt)) === todayKey,
   ).length
   const revenueToday = data.payments
-    .filter((payment) => toDateKey(new Date(payment.paidAt)) === todayKey)
+    .filter(
+      (payment) =>
+        (payment.status ?? 'pagado') === 'pagado' &&
+        toDateKey(new Date(payment.paidAt)) === todayKey,
+    )
     .reduce((total, payment) => total + payment.amount, 0)
 
   const upcomingReservations = data.reservations
@@ -509,6 +585,28 @@ export function buildReservationSummary(data, now = new Date()) {
   return { totalMonth, cancelled, cancellationRate, upcoming, pending }
 }
 
+export function buildPaymentSummary(data, now = new Date()) {
+  const todayKey = toDateKey(now)
+  const isPaid = (payment) => (payment.status ?? 'pagado') === 'pagado'
+
+  const paidPayments = data.payments.filter(isPaid)
+  const todaysPayments = data.payments.filter(
+    (payment) => paymentDateKey(payment) === todayKey,
+  )
+  const todaysPaidPayments = todaysPayments.filter(isPaid)
+
+  return {
+    total: data.payments.length,
+    paid: paidPayments.length,
+    pending: data.payments.filter((payment) => payment.status === 'pendiente').length,
+    refunded: data.payments.filter((payment) => payment.status === 'reembolsado').length,
+    totalAmount: data.payments.reduce((sum, payment) => sum + payment.amount, 0),
+    collected: paidPayments.reduce((sum, payment) => sum + payment.amount, 0),
+    todayCount: todaysPayments.length,
+    todayAmount: todaysPaidPayments.reduce((sum, payment) => sum + payment.amount, 0),
+  }
+}
+
 export function addReservationToData(data, input, now = new Date()) {
   const fields = normalizeReservationInput(data, input, { now })
 
@@ -528,15 +626,19 @@ export function addReservationToData(data, input, now = new Date()) {
     paymentIndex: null,
   }
 
-  const payment = input.registerPayment
-    ? {
-        id: `payment-${reservation.id}`,
-        reservationId: reservation.id,
-        amount: fields.total,
-        method: 'Efectivo',
-        paidAt: now.toISOString(),
-      }
-    : null
+  let payment = null
+  if (input.registerPayment) {
+    paymentSequence += 1
+    payment = {
+      id: `payment-${reservation.id}`,
+      code: `PAG-${String(paymentSequence).padStart(4, '0')}`,
+      reservationId: reservation.id,
+      amount: fields.total,
+      method: 'Efectivo',
+      status: 'pagado',
+      paidAt: now.toISOString(),
+    }
+  }
 
   const reservations = [reservation, ...data.reservations]
   const rooms = reservationCoversToday(reservation, now)
@@ -744,6 +846,111 @@ export function deleteReservationFromData(data, reservationId) {
   return {
     ...data,
     reservations: data.reservations.filter((item) => item.id !== reservation.id),
+    payments: data.payments.filter((payment) => payment.reservationId !== reservation.id),
+  }
+}
+
+function createPaymentId() {
+  return crypto.randomUUID ? `payment-${crypto.randomUUID()}` : `payment-${Date.now()}`
+}
+
+function normalizePaymentInput(data, input, paymentId = null, now = new Date()) {
+  const reservation = findReservationByNumber(
+    data.reservations,
+    input.reservationNumber ?? input.reservationCode,
+  )
+
+  if (!reservation) {
+    throw new Error('No existe una reserva con ese número. Verifica el código e intenta de nuevo.')
+  }
+
+  const duplicate = data.payments.find(
+    (payment) => payment.reservationId === reservation.id && payment.id !== paymentId,
+  )
+  if (duplicate) {
+    throw new Error(
+      `La reserva ${reservation.code} ya tiene un pago registrado (${duplicate.code}).`,
+    )
+  }
+
+  if (!PAYMENT_METHOD_VALUES.has(input.method)) {
+    throw new Error('Selecciona un método de pago válido.')
+  }
+
+  if (!PAYMENT_STATUS_VALUES.has(input.status)) {
+    throw new Error('Selecciona un estado de pago válido.')
+  }
+
+  const paidOn = String(input.paidAt ?? '')
+  if (!isValidDateKey(paidOn)) {
+    throw new Error('Ingresa una fecha de pago válida.')
+  }
+
+  if (paidOn > toDateKey(now)) {
+    throw new Error('La fecha de pago no puede ser posterior a hoy.')
+  }
+
+  return {
+    reservation,
+    method: input.method,
+    status: input.status,
+    paidAt:
+      paidOn === toDateKey(now)
+        ? now.toISOString()
+        : new Date(`${paidOn}T12:00:00`).toISOString(),
+  }
+}
+
+export function addPaymentToData(data, input, now = new Date()) {
+  const fields = normalizePaymentInput(data, input, null, now)
+  paymentSequence += 1
+
+  const payment = {
+    id: createPaymentId(),
+    code: `PAG-${String(paymentSequence).padStart(4, '0')}`,
+    reservationId: fields.reservation.id,
+    amount: fields.reservation.total,
+    method: fields.method,
+    status: fields.status,
+    paidAt: fields.paidAt,
+    createdAt: now.toISOString(),
+  }
+
+  return { ...data, payments: [payment, ...data.payments] }
+}
+
+export function updatePaymentInData(data, input, now = new Date()) {
+  const existing = data.payments.find((payment) => payment.id === input.id)
+  if (!existing) throw new Error('El pago que intentas editar ya no existe.')
+
+  const fields = normalizePaymentInput(data, input, existing.id, now)
+  const payment = {
+    ...existing,
+    reservationId: fields.reservation.id,
+    amount: fields.reservation.total,
+    method: fields.method,
+    status: fields.status,
+    paidAt: fields.paidAt,
+    updatedAt: now.toISOString(),
+  }
+
+  return {
+    ...data,
+    payments: data.payments.map((item) => (item.id === existing.id ? payment : item)),
+  }
+}
+
+export function deletePaymentFromData(data, paymentId) {
+  const payment = data.payments.find((item) => item.id === paymentId)
+  if (!payment) throw new Error('El pago que intentas eliminar ya no existe.')
+
+  if ((payment.status ?? 'pagado') !== 'pagado') {
+    throw new Error('Solo se pueden eliminar pagos con estado Pagado.')
+  }
+
+  return {
+    ...data,
+    payments: data.payments.filter((item) => item.id !== payment.id),
   }
 }
 
@@ -841,6 +1048,130 @@ export function updateRoomStatusInData(data, roomId, status) {
     ...data,
     rooms: data.rooms.map((room) =>
       room.id === roomId ? { ...room, status, updatedAt: new Date().toISOString() } : room,
+    ),
+  }
+}
+
+const CLIENT_DOCUMENT_RULES = new Map([
+  ['DNI', { pattern: /^\d{8}$/, message: 'El DNI debe tener 8 dígitos.' }],
+  ['RUC', { pattern: /^\d{11}$/, message: 'El RUC debe tener 11 dígitos.' }],
+  [
+    'CE',
+    {
+      pattern: /^[A-Za-z0-9]{9,12}$/,
+      message: 'El carné de extranjería debe tener entre 9 y 12 caracteres.',
+    },
+  ],
+])
+
+const CLIENT_EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const CLIENT_PHONE_PATTERN = /^\d{9}$/
+
+function createClientId() {
+  return crypto.randomUUID ? `client-${crypto.randomUUID()}` : `client-${Date.now()}`
+}
+
+function normalizeClientInput(data, input, clientId = null) {
+  const firstName = String(input.firstName ?? '').trim()
+  const lastName = String(input.lastName ?? '').trim()
+
+  if (!firstName) throw new Error('Ingresa los nombres del cliente.')
+  if (!lastName) throw new Error('Ingresa los apellidos del cliente.')
+
+  const documentType = CLIENT_DOCUMENT_TYPES.some((option) => option.value === input.documentType)
+    ? input.documentType
+    : 'DNI'
+  const document = String(input.document ?? '').trim()
+  const documentRule = CLIENT_DOCUMENT_RULES.get(documentType)
+
+  if (!documentRule || !documentRule.pattern.test(document)) {
+    throw new Error(documentRule?.message ?? 'Ingresa un documento válido.')
+  }
+
+  if (
+    data.clients.some(
+      (client) =>
+        client.id !== clientId &&
+        String(client.document ?? '').toLowerCase() === document.toLowerCase(),
+    )
+  ) {
+    throw new Error(`El documento ${document} ya está registrado.`)
+  }
+
+  const email = String(input.email ?? '').trim().toLowerCase()
+  if (!CLIENT_EMAIL_PATTERN.test(email)) {
+    throw new Error('Ingresa un correo electrónico válido.')
+  }
+
+  if (
+    data.clients.some(
+      (client) =>
+        client.id !== clientId &&
+        String(client.email ?? '').toLowerCase() === email,
+    )
+  ) {
+    throw new Error(`El correo ${email} ya está registrado.`)
+  }
+
+  const phone = String(input.phone ?? '').trim()
+  if (!CLIENT_PHONE_PATTERN.test(phone)) {
+    throw new Error('El teléfono debe tener 9 dígitos.')
+  }
+
+  return {
+    name: `${firstName} ${lastName}`.trim(),
+    documentType,
+    document,
+    email,
+    phone,
+    active: input.active !== false,
+  }
+}
+
+export function addClientToData(data, input, now = new Date()) {
+  const fields = normalizeClientInput(data, input)
+  const source = input.source === 'web' ? 'web' : 'admin'
+
+  return {
+    ...data,
+    clients: [
+      ...data.clients,
+      {
+        id: createClientId(),
+        ...fields,
+        source,
+        createdAt: now.toISOString(),
+      },
+    ],
+  }
+}
+
+export function updateClientInData(data, input) {
+  const existing = data.clients.find((client) => client.id === input.id)
+  if (!existing) throw new Error('El cliente que intentas editar ya no existe.')
+
+  const fields = normalizeClientInput(data, input, existing.id)
+  const client = { ...existing, ...fields, updatedAt: new Date().toISOString() }
+
+  return {
+    ...data,
+    clients: data.clients.map((item) => (item.id === existing.id ? client : item)),
+  }
+}
+
+export function updateClientStatusInData(data, clientId, active) {
+  if (typeof active !== 'boolean') {
+    throw new Error('Selecciona un estado válido.')
+  }
+
+  if (!data.clients.some((client) => client.id === clientId)) {
+    throw new Error('El cliente seleccionado ya no existe.')
+  }
+
+  return {
+    ...data,
+    clients: data.clients.map((client) =>
+      client.id === clientId ? { ...client, active, updatedAt: new Date().toISOString() } : client,
     ),
   }
 }

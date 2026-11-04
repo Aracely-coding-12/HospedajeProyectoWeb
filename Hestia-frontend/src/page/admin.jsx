@@ -1,30 +1,39 @@
 import { useState } from 'react'
 import hestiaEmblem from '../assets/hestia-emblem.png'
 import {
+  addClientToData,
+  addPaymentToData,
   addReservationToData,
   addRoomToData,
   buildDashboardSummary,
+  buildPaymentSummary,
   buildReservationSummary,
   cancelReservationInData,
   confirmReservationInData,
   createInitialData,
+  deletePaymentFromData,
   deleteReservationFromData,
   deleteRoomFromData,
   rejectReservationInData,
+  updateClientInData,
+  updateClientStatusInData,
+  updatePaymentInData,
   updateReservationInData,
   updateRoomInData,
   updateRoomStatusInData,
 } from '../data/hestiaData.js'
+import Clientes from './cliente.jsx'
 import Habitaciones from './habitaciones.jsx'
 import Inicio from './inicio.jsx'
+import Pagos from './pago.jsx'
 import Reservas from './reserva.jsx'
 
 const NAV_ITEMS = [
   { id: 'inicio', label: 'Inicio', view: 'inicio' },
   { id: 'reserva', label: 'Reserva', view: 'reserva' },
   { id: 'habitaciones', label: 'Habitaciones', view: 'habitaciones' },
-  { id: 'clientes', label: 'Clientes' },
-  { id: 'pagos', label: 'Pagos' },
+  { id: 'clientes', label: 'Clientes', view: 'clientes' },
+  { id: 'pagos', label: 'Pagos', view: 'pagos' },
   { id: 'adicionales', label: 'S. Adicionales' },
   { id: 'promociones', label: 'Promociones' },
 ]
@@ -146,6 +155,7 @@ function Admin({ session, onLogout }) {
 
   const summary = buildDashboardSummary(data)
   const reservationSummary = buildReservationSummary(data)
+  const paymentSummary = buildPaymentSummary(data)
 
   function navigate(nextView) {
     setNotice(null)
@@ -193,6 +203,30 @@ function Admin({ session, onLogout }) {
     setData(updateRoomStatusInData(data, roomId, status))
   }
 
+  function handleCreateClient(input) {
+    setData(addClientToData(data, input))
+  }
+
+  function handleUpdateClient(input) {
+    setData(updateClientInData(data, input))
+  }
+
+  function handleClientStatusChange(clientId, active) {
+    setData(updateClientStatusInData(data, clientId, active))
+  }
+
+  function handleCreatePayment(input) {
+    setData(addPaymentToData(data, input))
+  }
+
+  function handleUpdatePayment(input) {
+    setData(updatePaymentInData(data, input))
+  }
+
+  function handleDeletePayment(paymentId) {
+    setData(deletePaymentFromData(data, paymentId))
+  }
+
   return (
     <div className="flex min-h-svh flex-col bg-[#050505] lg:flex-row">
       <Sidebar view={view} onNavigate={navigate} onLogout={onLogout} />
@@ -230,6 +264,25 @@ function Admin({ session, onLogout }) {
                 onUpdateRoom={handleUpdateRoom}
                 onDeleteRoom={handleDeleteRoom}
                 onStatusChange={handleRoomStatusChange}
+              />
+            ) : view === 'clientes' ? (
+              <Clientes
+                clients={data.clients}
+                canManage={session?.role === 'admin' && Boolean(session?.authorized)}
+                onCreateClient={handleCreateClient}
+                onUpdateClient={handleUpdateClient}
+                onStatusChange={handleClientStatusChange}
+              />
+            ) : view === 'pagos' ? (
+              <Pagos
+                payments={data.payments}
+                reservations={data.reservations}
+                rooms={data.rooms}
+                clients={data.clients}
+                summary={paymentSummary}
+                onCreatePayment={handleCreatePayment}
+                onUpdatePayment={handleUpdatePayment}
+                onDeletePayment={handleDeletePayment}
               />
             ) : (
               <Inicio
