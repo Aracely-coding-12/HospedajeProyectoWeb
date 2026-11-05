@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import hestiaEmblem from '../assets/hestia-emblem.png'
 import {
   addClientToData,
@@ -49,16 +49,6 @@ const NAV_ITEMS = [
   { id: 'cuenta', label: 'Mi cuenta', view: 'cuenta' },
 ]
 
-function UserBadgeIcon({ className = '' }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className={className}>
-      <circle cx="12" cy="12" r="9" />
-      <circle cx="12" cy="9.4" r="2.9" />
-      <path d="M6.6 19a5.7 5.7 0 0 1 10.8 0" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 function Sidebar({ view, onNavigate, onLogout }) {
   return (
     <aside className="flex w-full shrink-0 flex-col justify-between border-b border-amber-500/70 bg-[#080705] px-5 py-6 lg:sticky lg:top-0 lg:h-svh lg:w-[232px] lg:border-b-0 lg:border-r lg:px-6 lg:py-8">
@@ -67,7 +57,7 @@ function Sidebar({ view, onNavigate, onLogout }) {
           <img
             src={hestiaEmblem}
             alt=""
-            className="emblem-mask h-16 w-auto [clip-path:inset(0_0_6%_0)] mix-blend-screen lg:h-[92px]"
+            className="h-16 w-auto object-contain lg:h-[92px]"
           />
           <div className="text-center lg:mt-1">
             <p className="brand-font brand-glow bg-linear-to-b from-amber-100 via-amber-300 to-amber-600 bg-clip-text text-[36px] leading-none text-transparent lg:text-[42px]">
@@ -122,62 +112,6 @@ function Sidebar({ view, onNavigate, onLogout }) {
         Cerrar sesión
       </button>
     </aside>
-  )
-}
-
-function AccountMenu({ profile, onNavigate, onLogout }) {
-  const detailsRef = useRef(null)
-
-  function handleNavigate() {
-    detailsRef.current?.removeAttribute('open')
-    onNavigate('cuenta')
-  }
-
-  return (
-    <details ref={detailsRef} className="relative">
-      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full px-1 py-1 text-sm text-stone-200 transition hover:text-amber-200 [&::-webkit-details-marker]:hidden">
-        Mi cuenta
-        <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-stone-200 text-[#080705]">
-          {profile.avatar ? (
-            <img
-              src={profile.avatar}
-              alt={`Foto de perfil de ${profile.name}`}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <UserBadgeIcon className="h-4 w-4" />
-          )}
-        </span>
-      </summary>
-
-      <div className="absolute right-0 z-30 mt-3 w-64 overflow-hidden rounded-lg border border-amber-500/60 bg-[#0b0a07] shadow-[0_24px_50px_-24px_rgba(0,0,0,0.95)]">
-        <div className="border-b border-amber-400/20 px-4 py-3">
-          <p className="truncate text-sm font-semibold text-amber-100">
-            {profile.name || 'Administrador/a'}
-          </p>
-          <p className="mt-0.5 truncate text-xs text-stone-400">
-            {profile.email || 'admin@hestia.com'}
-          </p>
-          <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-amber-500">
-            Administrador
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleNavigate}
-          className="w-full border-b border-amber-400/10 px-4 py-3 text-left text-sm text-stone-300 transition hover:bg-amber-400/10 hover:text-amber-200"
-        >
-          Ver mi cuenta
-        </button>
-        <button
-          type="button"
-          onClick={onLogout}
-          className="w-full px-4 py-3 text-left text-sm text-stone-300 transition hover:bg-amber-400/10 hover:text-amber-200"
-        >
-          Cerrar sesión
-        </button>
-      </div>
-    </details>
   )
 }
 
@@ -302,7 +236,14 @@ function Admin({ session, onLogout }) {
         />
 
         <div className="flex justify-end px-4 pt-5 sm:px-8 lg:px-12">
-          <AccountMenu profile={profile} onNavigate={navigate} onLogout={onLogout} />
+          <button
+            type="button"
+            onClick={() => navigate('cuenta')}
+            aria-current={view === 'cuenta' ? 'page' : undefined}
+            className="rounded px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-stone-500 transition hover:text-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40"
+          >
+            Mi cuenta
+          </button>
         </div>
 
         <main className="flex-1 px-4 pb-12 pt-5 sm:px-8 lg:px-12">

@@ -79,7 +79,7 @@ function BrandHeader() {
         <img
           src={hestiaEmblem}
           alt=""
-          className="emblem-mask relative h-32 w-auto [clip-path:inset(0_0_6%_0)] mix-blend-screen sm:h-36"
+          className="relative h-32 w-auto object-contain sm:h-36"
         />
       </div>
       <p className="brand-font brand-glow mt-1 bg-linear-to-b from-amber-100 via-amber-300 to-amber-600 bg-clip-text text-[44px] leading-none text-transparent">

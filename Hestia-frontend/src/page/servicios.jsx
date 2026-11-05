@@ -30,7 +30,13 @@ const filterLabelClass = 'mb-1 block text-[10px] font-medium tracking-wide text-
 function formatServicePrice(amount) {
   const value = Math.round((Number(amount) || 0) * 100) / 100
   const [integerPart, decimalPart] = value.toFixed(2).split('.')
-  const grouped = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+
+  let grouped = ''
+  for (let index = integerPart.length - 1, digits = 0; index >= 0; index -= 1) {
+    grouped = integerPart[index] + grouped
+    digits += 1
+    if (digits % 3 === 0 && index > 0) grouped = ` ${grouped}`
+  }
 
   return `S/ ${grouped}${decimalPart === '00' ? '' : `.${decimalPart}`}`
 }

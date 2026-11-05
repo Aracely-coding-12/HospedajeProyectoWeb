@@ -520,7 +520,18 @@ function Cuenta({ profile, onUpdateProfile }) {
   }
 
   function togglePasswordVisible(field) {
-    setPasswordVisible((current) => ({ ...current, [field]: !current[field] }))
+    setPasswordVisible((current) => {
+      switch (field) {
+        case 'current':
+          return { ...current, current: !current.current }
+        case 'next':
+          return { ...current, next: !current.next }
+        case 'confirm':
+          return { ...current, confirm: !current.confirm }
+        default:
+          return current
+      }
+    })
   }
 
   async function handlePasswordSubmit(event) {

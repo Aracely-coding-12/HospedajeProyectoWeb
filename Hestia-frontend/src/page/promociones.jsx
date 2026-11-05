@@ -46,20 +46,29 @@ const STATUS_FILTER_OPTIONS = [
   { value: 'inactiva', label: 'Inactivas' },
 ]
 
-const SUMMARY_TONES = {
-  amber: {
-    card: 'border-amber-400/60',
-    icon: 'border-amber-400/40 bg-amber-400/10 text-amber-300',
-  },
-  emerald: {
-    card: 'border-emerald-500/40',
-    icon: 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300',
-  },
-  rose: {
-    card: 'border-rose-500/40',
-    icon: 'border-rose-500/40 bg-rose-500/10 text-rose-300',
-  },
-}
+const SUMMARY_TONES = new Map([
+  [
+    'amber',
+    {
+      card: 'border-amber-400/60',
+      icon: 'border-amber-400/40 bg-amber-400/10 text-amber-300',
+    },
+  ],
+  [
+    'emerald',
+    {
+      card: 'border-emerald-500/40',
+      icon: 'border-emerald-400/40 bg-emerald-400/10 text-emerald-300',
+    },
+  ],
+  [
+    'rose',
+    {
+      card: 'border-rose-500/40',
+      icon: 'border-rose-500/40 bg-rose-500/10 text-rose-300',
+    },
+  ],
+])
 
 const fieldClass =
   'w-full rounded-md border border-amber-400/55 bg-[#0b0a07] px-3 py-2 text-sm text-amber-50 outline-none transition placeholder:text-stone-600 focus:border-amber-300 focus:ring-2 focus:ring-amber-400/15'
@@ -352,7 +361,7 @@ function PromotionPhoto({ promotion, className = '', iconClassName = '' }) {
 }
 
 function SummaryCard({ icon: Icon, label, value, tone }) {
-  const styles = SUMMARY_TONES[tone]
+  const styles = SUMMARY_TONES.get(tone) ?? SUMMARY_TONES.get('amber')
 
   return (
     <div

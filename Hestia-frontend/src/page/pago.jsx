@@ -54,17 +54,18 @@ function emptyForm() {
   }
 }
 
+const HTML_ESCAPES = new Map([
+  ['&', '&amp;'],
+  ['<', '&lt;'],
+  ['>', '&gt;'],
+  ['"', '&quot;'],
+  ["'", '&#39;'],
+])
+
 function escapeHtml(value) {
   return String(value ?? '').replace(
     /[&<>"']/g,
-    (character) =>
-      ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;',
-      })[character],
+    (character) => HTML_ESCAPES.get(character) ?? character,
   )
 }
 
