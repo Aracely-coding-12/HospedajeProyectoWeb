@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import hestiaEmblem from '../assets/hestia-emblem.png'
 import {
   addClientToData,
   addPaymentToData,
+  addPromotionToData,
   addReservationToData,
   addRoomToData,
+  addServiceToData,
   buildDashboardSummary,
   buildPaymentSummary,
   buildReservationSummary,
@@ -12,21 +14,29 @@ import {
   confirmReservationInData,
   createInitialData,
   deletePaymentFromData,
+  deletePromotionFromData,
   deleteReservationFromData,
   deleteRoomFromData,
+  deleteServiceFromData,
   rejectReservationInData,
   updateClientInData,
   updateClientStatusInData,
   updatePaymentInData,
+  updatePromotionInData,
   updateReservationInData,
   updateRoomInData,
   updateRoomStatusInData,
+  updateServiceInData,
 } from '../data/hestiaData.js'
+import { getAdminProfile, updateAdminProfile } from '../lib/adminAuth.js'
 import Clientes from './cliente.jsx'
+import Cuenta from './cuenta.jsx'
 import Habitaciones from './habitaciones.jsx'
 import Inicio from './inicio.jsx'
 import Pagos from './pago.jsx'
+import Promociones from './promociones.jsx'
 import Reservas from './reserva.jsx'
+import Servicios from './servicios.jsx'
 
 const NAV_ITEMS = [
   { id: 'inicio', label: 'Inicio', view: 'inicio' },
@@ -34,8 +44,9 @@ const NAV_ITEMS = [
   { id: 'habitaciones', label: 'Habitaciones', view: 'habitaciones' },
   { id: 'clientes', label: 'Clientes', view: 'clientes' },
   { id: 'pagos', label: 'Pagos', view: 'pagos' },
-  { id: 'adicionales', label: 'S. Adicionales' },
-  { id: 'promociones', label: 'Promociones' },
+  { id: 'adicionales', label: 'S. Adicionales', view: 'servicios' },
+  { id: 'promociones', label: 'Promociones', view: 'promociones' },
+  { id: 'cuenta', label: 'Mi cuenta', view: 'cuenta' },
 ]
 
 function UserBadgeIcon({ className = '' }) {
@@ -114,28 +125,50 @@ function Sidebar({ view, onNavigate, onLogout }) {
   )
 }
 
-function AccountMenu({ session, onLogout }) {
+function AccountMenu({ profile, onNavigate, onLogout }) {
+  const detailsRef = useRef(null)
+
+  function handleNavigate() {
+    detailsRef.current?.removeAttribute('open')
+    onNavigate('cuenta')
+  }
+
   return (
-    <details className="relative">
+    <details ref={detailsRef} className="relative">
       <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full px-1 py-1 text-sm text-stone-200 transition hover:text-amber-200 [&::-webkit-details-marker]:hidden">
         Mi cuenta
-        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-stone-200 text-[#080705]">
-          <UserBadgeIcon className="h-4 w-4" />
+        <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-stone-200 text-[#080705]">
+          {profile.avatar ? (
+            <img
+              src={profile.avatar}
+              alt={`Foto de perfil de ${profile.name}`}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <UserBadgeIcon className="h-4 w-4" />
+          )}
         </span>
       </summary>
 
       <div className="absolute right-0 z-30 mt-3 w-64 overflow-hidden rounded-lg border border-amber-500/60 bg-[#0b0a07] shadow-[0_24px_50px_-24px_rgba(0,0,0,0.95)]">
         <div className="border-b border-amber-400/20 px-4 py-3">
           <p className="truncate text-sm font-semibold text-amber-100">
-            {session?.name ?? 'Administrador/a'}
+            {profile.name || 'Administrador/a'}
           </p>
           <p className="mt-0.5 truncate text-xs text-stone-400">
-            {session?.email ?? 'admin@hestia.com'}
+            {profile.email || 'admin@hestia.com'}
           </p>
           <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-amber-500">
             Administrador
           </p>
         </div>
+        <button
+          type="button"
+          onClick={handleNavigate}
+          className="w-full border-b border-amber-400/10 px-4 py-3 text-left text-sm text-stone-300 transition hover:bg-amber-400/10 hover:text-amber-200"
+        >
+          Ver mi cuenta
+        </button>
         <button
           type="button"
           onClick={onLogout}
@@ -152,6 +185,7 @@ function Admin({ session, onLogout }) {
   const [data, setData] = useState(createInitialData)
   const [view, setView] = useState('inicio')
   const [notice, setNotice] = useState(null)
+  const [profile, setProfile] = useState(() => getAdminProfile(session))
 
   const summary = buildDashboardSummary(data)
   const reservationSummary = buildReservationSummary(data)
@@ -161,6 +195,12 @@ function Admin({ session, onLogout }) {
     setNotice(null)
     setView(nextView)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function handleUpdateProfile(patch) {
+    const updated = updateAdminProfile(profile, patch)
+    setProfile(updated)
+    return updated
   }
 
   function handleCreateReservation(input) {
@@ -227,6 +267,30 @@ function Admin({ session, onLogout }) {
     setData(deletePaymentFromData(data, paymentId))
   }
 
+  function handleCreateService(input) {
+    setData(addServiceToData(data, input))
+  }
+
+  function handleUpdateService(input) {
+    setData(updateServiceInData(data, input))
+  }
+
+  function handleDeleteService(serviceId) {
+    setData(deleteServiceFromData(data, serviceId))
+  }
+
+  function handleCreatePromotion(input) {
+    setData(addPromotionToData(data, input))
+  }
+
+  function handleUpdatePromotion(input) {
+    setData(updatePromotionInData(data, input))
+  }
+
+  function handleDeletePromotion(promotionId) {
+    setData(deletePromotionFromData(data, promotionId))
+  }
+
   return (
     <div className="flex min-h-svh flex-col bg-[#050505] lg:flex-row">
       <Sidebar view={view} onNavigate={navigate} onLogout={onLogout} />
@@ -238,7 +302,7 @@ function Admin({ session, onLogout }) {
         />
 
         <div className="flex justify-end px-4 pt-5 sm:px-8 lg:px-12">
-          <AccountMenu session={session} onLogout={onLogout} />
+          <AccountMenu profile={profile} onNavigate={navigate} onLogout={onLogout} />
         </div>
 
         <main className="flex-1 px-4 pb-12 pt-5 sm:px-8 lg:px-12">
@@ -284,6 +348,22 @@ function Admin({ session, onLogout }) {
                 onUpdatePayment={handleUpdatePayment}
                 onDeletePayment={handleDeletePayment}
               />
+            ) : view === 'servicios' ? (
+              <Servicios
+                services={data.services}
+                onCreateService={handleCreateService}
+                onUpdateService={handleUpdateService}
+                onDeleteService={handleDeleteService}
+              />
+            ) : view === 'promociones' ? (
+              <Promociones
+                promotions={data.promotions}
+                onCreatePromotion={handleCreatePromotion}
+                onUpdatePromotion={handleUpdatePromotion}
+                onDeletePromotion={handleDeletePromotion}
+              />
+            ) : view === 'cuenta' ? (
+              <Cuenta profile={profile} onUpdateProfile={handleUpdateProfile} />
             ) : (
               <Inicio
                 summary={summary}

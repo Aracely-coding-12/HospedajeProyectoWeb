@@ -1,28 +1,19 @@
 import { useState } from 'react'
 import hestiaEmblem from '../assets/hestia-emblem.png'
-
-const ADMINS_KEY = 'hestia_admins_v1'
-const PASSWORD_MIN_LENGTH = 12
-const PASSWORD_HELP = '12 caracteres / letras mayúsculas, minúsculas, números y símbolos'
-
-const DEFAULT_ADMIN = {
-  id: 'hestia-default-admin',
-  name: 'Administrador Hestia',
-  email: 'admin@hestia.com',
-  password: 'Admin123!2026',
-  role: 'admin',
-  authorized: true,
-}
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-const PASSWORD_RULES = [
-  { id: 'length', label: 'Mínimo 12 caracteres', test: (value) => value.length >= PASSWORD_MIN_LENGTH },
-  { id: 'uppercase', label: 'Al menos una mayúscula', test: (value) => /[A-Z]/.test(value) },
-  { id: 'lowercase', label: 'Al menos una minúscula', test: (value) => /[a-z]/.test(value) },
-  { id: 'number', label: 'Al menos un número', test: (value) => /\d/.test(value) },
-  { id: 'special', label: 'Al menos un símbolo', test: (value) => /[^A-Za-z0-9]/.test(value) },
-]
+import {
+  ADMINS_KEY,
+  DEFAULT_ADMIN,
+  PASSWORD_HELP,
+  PASSWORD_RULES,
+  authenticate,
+  createId,
+  hashPassword,
+  isStrongPassword,
+  isValidEmail,
+  normalizeEmail,
+  readStore,
+  writeStore,
+} from '../lib/adminAuth.js'
 
 const labelClass = 'mb-1.5 block text-xs font-medium tracking-wide text-amber-100/90'
 
@@ -75,65 +66,6 @@ function AlertIcon({ className = '' }) {
       <path d="M12 17h.01" strokeLinecap="round" />
     </svg>
   )
-}
-
-function readStore(key) {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(key) ?? '[]')
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-function writeStore(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value))
-    return true
-  } catch {
-    return false
-  }
-}
-
-async function hashPassword(password) {
-  const bytes = new TextEncoder().encode(`hestia:${password}`)
-  const digest = await crypto.subtle.digest('SHA-256', bytes)
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
-}
-
-function isValidEmail(value) {
-  return EMAIL_PATTERN.test(value.trim())
-}
-
-function isStrongPassword(value) {
-  return PASSWORD_RULES.every((rule) => rule.test(value))
-}
-
-function normalizeEmail(value) {
-  return value.trim().toLowerCase()
-}
-
-async function authenticate(email, password) {
-  const normalizedEmail = normalizeEmail(email)
-  const passwordHash = await hashPassword(password)
-
-  if (normalizedEmail === DEFAULT_ADMIN.email && passwordHash === (await hashPassword(DEFAULT_ADMIN.password))) {
-    return DEFAULT_ADMIN
-  }
-
-  return (
-    readStore(ADMINS_KEY).find(
-      (admin) =>
-        admin.email === normalizedEmail &&
-        admin.passwordHash === passwordHash &&
-        admin.role === 'admin' &&
-        admin.authorized,
-    ) ?? null
-  )
-}
-
-function createId() {
-  return crypto.randomUUID ? crypto.randomUUID() : `admin-${Date.now()}`
 }
 
 function BrandHeader() {

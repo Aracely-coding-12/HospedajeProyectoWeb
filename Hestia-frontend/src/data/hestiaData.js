@@ -168,6 +168,89 @@ export function findReservationByNumber(reservations, value) {
   )
 }
 
+export const SERVICE_CATEGORY_OPTIONS = [
+  { value: 'bebidas', label: 'Bebidas' },
+  { value: 'desayuno', label: 'Desayunos' },
+  { value: 'almuerzo', label: 'Almuerzos' },
+  { value: 'cena', label: 'Cenas' },
+]
+
+export const SERVICE_STATUS_OPTIONS = [
+  { value: 'disponible', label: 'Disponible' },
+  { value: 'no-disponible', label: 'No disponible' },
+]
+
+const SERVICE_CATEGORY_VALUES = new Set(
+  SERVICE_CATEGORY_OPTIONS.map((option) => option.value),
+)
+const SERVICE_STATUS_VALUES = new Set(SERVICE_STATUS_OPTIONS.map((option) => option.value))
+
+export function serviceCategoryLabel(category) {
+  return (
+    SERVICE_CATEGORY_OPTIONS.find((option) => option.value === category)?.label ?? category
+  )
+}
+
+export function serviceStatusLabel(status) {
+  return SERVICE_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status
+}
+
+export const PROMOTION_TYPE_OPTIONS = [
+  { value: 'descuento', label: 'Descuento' },
+  { value: 'paquete', label: 'Paquete' },
+  { value: 'combo', label: 'Combo' },
+  { value: 'dosxuno', label: '2x1' },
+  { value: 'cortesia', label: 'Cortesía' },
+]
+
+export const PROMOTION_CATEGORY_OPTIONS = [
+  { value: 'bebidas', label: 'Bebidas' },
+  { value: 'habitacion', label: 'Habitación' },
+  { value: 'desayunos', label: 'Desayunos' },
+  { value: 'combos', label: 'Combos' },
+]
+
+export const PROMOTION_STATUS_OPTIONS = [
+  { value: 'activa', label: 'Activa' },
+  { value: 'inactiva', label: 'Inactiva' },
+]
+
+const PROMOTION_TYPE_VALUES = new Set(PROMOTION_TYPE_OPTIONS.map((option) => option.value))
+const PROMOTION_CATEGORY_VALUES = new Set(
+  PROMOTION_CATEGORY_OPTIONS.map((option) => option.value),
+)
+const PROMOTION_STATUS_VALUES = new Set(PROMOTION_STATUS_OPTIONS.map((option) => option.value))
+const PROMOTION_STATUS_LABELS = new Map([
+  ['activa', 'Activa'],
+  ['programada', 'Programada'],
+  ['vencida', 'Vencida'],
+  ['inactiva', 'Inactiva'],
+])
+
+export function promotionTypeLabel(type) {
+  return PROMOTION_TYPE_OPTIONS.find((option) => option.value === type)?.label ?? type
+}
+
+export function promotionCategoryLabel(category) {
+  return (
+    PROMOTION_CATEGORY_OPTIONS.find((option) => option.value === category)?.label ?? category
+  )
+}
+
+export function promotionStatusLabel(status) {
+  return PROMOTION_STATUS_LABELS.get(status) ?? status
+}
+
+export function promotionEffectiveStatus(promotion, now = new Date()) {
+  const today = toDateKey(now)
+
+  if (promotion.endDate && promotion.endDate < today) return 'vencida'
+  if ((promotion.status ?? 'activa') !== 'activa') return 'inactiva'
+  if (promotion.startDate && promotion.startDate > today) return 'programada'
+
+  return 'activa'
+}
+
 const RANDOM_INCREMENT = 27947 * 65536 + 31221 // 0x6d2b79f5
 const UINT32_RANGE = 65536 * 65536 // 2^32
 const RANDOM_SEED = 2026 * 10000 + 1028 // 20.261.028
@@ -384,6 +467,218 @@ const payments = reservations
     }
   })
 
+const services = [
+  {
+    name: 'Café americano',
+    category: 'bebidas',
+    price: 7,
+    description: 'Café filtrado con granos locales de Quillabamba, servido caliente.',
+    status: 'disponible',
+  },
+  {
+    name: 'Mate de coca',
+    category: 'bebidas',
+    price: 5,
+    description: 'Infusión tradicional andina, ideal para aclimatarse a la altura.',
+    status: 'disponible',
+  },
+  {
+    name: 'Jugo de naranja natural',
+    category: 'bebidas',
+    price: 9,
+    description: 'Jugo exprimido al momento, sin azúcar añadida ni conservantes.',
+    status: 'disponible',
+  },
+  {
+    name: 'Chicha morada',
+    category: 'bebidas',
+    price: 6,
+    description: 'Bebida tradicional de maíz morado con frutas y especias.',
+    status: 'no-disponible',
+  },
+  {
+    name: 'Agua mineral',
+    category: 'bebidas',
+    price: 4,
+    description: 'Botella de agua mineral de 625 ml, con o sin gas.',
+    status: 'disponible',
+  },
+  {
+    name: 'Smoothie de fresa',
+    category: 'bebidas',
+    price: 11,
+    description: 'Batido de fresa, plátano y yogurt natural de la región.',
+    status: 'disponible',
+  },
+  {
+    name: 'Desayuno andino',
+    category: 'desayuno',
+    price: 18,
+    description: 'Pan de quinua, huevos, queso andino, fruta de estación y mate de coca.',
+    status: 'disponible',
+  },
+  {
+    name: 'Desayuno americano',
+    category: 'desayuno',
+    price: 22,
+    description: 'Huevos al gusto, tostadas, mantequilla, mermelada y café americano.',
+    status: 'disponible',
+  },
+  {
+    name: 'Avena con frutas',
+    category: 'desayuno',
+    price: 12,
+    description: 'Avena cremosa con plátano, manzana, pasas y un toque de canela.',
+    status: 'disponible',
+  },
+  {
+    name: 'Pan con palta',
+    category: 'desayuno',
+    price: 10,
+    description: 'Pan artesanal tostado con palta, tomate y sal de Maras.',
+    status: 'no-disponible',
+  },
+  {
+    name: 'Menú del día',
+    category: 'almuerzo',
+    price: 25,
+    description: 'Sopa del día, segundo a elección y refresco natural de la casa.',
+    status: 'disponible',
+  },
+  {
+    name: 'Lomo saltado',
+    category: 'almuerzo',
+    price: 32,
+    description: 'Lomo de res salteado con cebolla, tomate, ají y papas fritas.',
+    status: 'disponible',
+  },
+  {
+    name: 'Trucha a la plancha',
+    category: 'almuerzo',
+    price: 30,
+    description: 'Trucha fresca de los Andes acompañada de arroz y ensalada.',
+    status: 'no-disponible',
+  },
+  {
+    name: 'Ají de gallina',
+    category: 'almuerzo',
+    price: 28,
+    description: 'Pollo deshilachado en crema de ají amarillo, servido con arroz.',
+    status: 'disponible',
+  },
+  {
+    name: 'Cena ligera',
+    category: 'cena',
+    price: 20,
+    description: 'Sopa reconfortante, pan artesanal y una bebida caliente.',
+    status: 'disponible',
+  },
+  {
+    name: 'Pizza artesanal',
+    category: 'cena',
+    price: 35,
+    description: 'Masa delgada con queso mozzarella, tomate fresco y albahaca.',
+    status: 'disponible',
+  },
+  {
+    name: 'Pasta al pesto',
+    category: 'cena',
+    price: 26,
+    description: 'Pasta al dente con salsa de albahaca, queso parmesano y nueces.',
+    status: 'disponible',
+  },
+  {
+    name: 'Sopa criolla',
+    category: 'cena',
+    price: 18,
+    description: 'Caldo de res con fideos, leche, huevo y hierbas frescas.',
+    status: 'no-disponible',
+  },
+].map((service, index) => ({ id: `service-${index + 1}`, ...service }))
+
+let promotionSequence = 0
+
+const promotions = [
+  {
+    name: 'Escapada romántica',
+    description: 'Incluye desayuno y late check-out para dos personas.',
+    reservationNumber: 'HES-0001',
+    type: 'descuento',
+    category: 'habitacion',
+    discount: 15,
+    startDate: toDateKey(addDays(today, -10)),
+    endDate: toDateKey(addDays(today, 20)),
+    status: 'activa',
+    visibleOnWeb: true,
+    image: '/rooms/suite.svg',
+    createdAt: addDays(today, -12).toISOString(),
+  },
+  {
+    name: 'Desayuno incluido',
+    description: 'Disfruta de un delicioso desayuno durante tu estadía.',
+    reservationNumber: '',
+    type: 'paquete',
+    category: 'desayunos',
+    discount: 100,
+    startDate: toDateKey(addDays(today, -5)),
+    endDate: toDateKey(addDays(today, 15)),
+    status: 'activa',
+    visibleOnWeb: true,
+    image: '',
+    createdAt: addDays(today, -6).toISOString(),
+  },
+  {
+    name: 'Fin de semana especial',
+    description: '2 noches + 1 cena incluida para disfrutar en pareja.',
+    reservationNumber: '',
+    type: 'paquete',
+    category: 'combos',
+    discount: 20,
+    startDate: toDateKey(addDays(today, -20)),
+    endDate: toDateKey(addDays(today, 30)),
+    status: 'activa',
+    visibleOnWeb: true,
+    image: '/rooms/matrimonial.svg',
+    createdAt: addDays(today, -22).toISOString(),
+  },
+  {
+    name: 'Happy Hour',
+    description: '2x1 en bebidas seleccionadas de 6 a 8 p. m.',
+    reservationNumber: '',
+    type: 'dosxuno',
+    category: 'bebidas',
+    discount: 50,
+    startDate: toDateKey(addDays(today, -30)),
+    endDate: toDateKey(addDays(today, -10)),
+    status: 'activa',
+    visibleOnWeb: true,
+    image: '',
+    createdAt: addDays(today, -32).toISOString(),
+  },
+  {
+    name: 'Cena especial',
+    description: 'Menú gourmet a precio especial para huéspedes.',
+    reservationNumber: 'HES-0010',
+    type: 'descuento',
+    category: 'combos',
+    discount: 10,
+    startDate: toDateKey(addDays(today, 5)),
+    endDate: toDateKey(addDays(today, 35)),
+    status: 'activa',
+    visibleOnWeb: true,
+    image: '',
+    createdAt: addDays(today, -1).toISOString(),
+  },
+].map((promotion) => {
+  promotionSequence += 1
+
+  return {
+    id: `promotion-${promotionSequence}`,
+    code: `PROM-${String(promotionSequence).padStart(4, '0')}`,
+    ...promotion,
+  }
+})
+
 function presentReservation(reservation, roomList) {
   const room = roomList.find((item) => item.id === reservation.roomId)
 
@@ -401,6 +696,8 @@ export function createInitialData() {
     clients: clients.map((client) => ({ ...client })),
     reservations: reservations.map((reservation) => ({ ...reservation })),
     payments: payments.map((payment) => ({ ...payment })),
+    services: services.map((service) => ({ ...service })),
+    promotions: promotions.map((promotion) => ({ ...promotion })),
   }
 }
 
@@ -952,6 +1249,236 @@ export function deletePaymentFromData(data, paymentId) {
     ...data,
     payments: data.payments.filter((item) => item.id !== payment.id),
   }
+}
+
+function createServiceId() {
+  return crypto.randomUUID ? `service-${crypto.randomUUID()}` : `service-${Date.now()}`
+}
+
+function normalizeServiceInput(data, input, serviceId = null) {
+  const name = String(input.name ?? '').trim()
+  if (!name) throw new Error('Ingresa el nombre del servicio.')
+  if (name.length > 80) throw new Error('El nombre no puede superar los 80 caracteres.')
+
+  if (
+    data.services.some(
+      (service) => service.id !== serviceId && service.name.toLowerCase() === name.toLowerCase(),
+    )
+  ) {
+    throw new Error(`Ya existe un servicio llamado "${name}".`)
+  }
+
+  if (!SERVICE_CATEGORY_VALUES.has(input.category)) {
+    throw new Error('Selecciona una categoría válida.')
+  }
+
+  const price = Number(input.price)
+  if (!Number.isFinite(price) || price <= 0) {
+    throw new Error('El precio debe ser mayor a 0.')
+  }
+
+  const description = String(input.description ?? '').trim()
+  if (!description) throw new Error('Ingresa una descripción del servicio.')
+  if (description.length > 240) {
+    throw new Error('La descripción no puede superar los 240 caracteres.')
+  }
+
+  if (!SERVICE_STATUS_VALUES.has(input.status)) {
+    throw new Error('Selecciona un estado válido.')
+  }
+
+  const image = String(input.image ?? '').trim()
+  if (image && !image.startsWith('data:image/') && !/^https?:\/\//i.test(image) && !image.startsWith('/')) {
+    throw new Error('La foto del servicio no es válida.')
+  }
+
+  return {
+    name,
+    category: input.category,
+    price: Math.round(price * 100) / 100,
+    description,
+    status: input.status,
+    image,
+  }
+}
+
+export function addServiceToData(data, input, now = new Date()) {
+  const fields = normalizeServiceInput(data, input)
+  const service = {
+    id: createServiceId(),
+    ...fields,
+    createdAt: now.toISOString(),
+  }
+
+  return { ...data, services: [service, ...data.services] }
+}
+
+export function updateServiceInData(data, input, now = new Date()) {
+  const existing = data.services.find((service) => service.id === input.id)
+  if (!existing) throw new Error('El servicio que intentas editar ya no existe.')
+
+  const fields = normalizeServiceInput(data, input, existing.id)
+  const service = { ...existing, ...fields, updatedAt: now.toISOString() }
+
+  return {
+    ...data,
+    services: data.services.map((item) => (item.id === existing.id ? service : item)),
+  }
+}
+
+export function deleteServiceFromData(data, serviceId) {
+  if (!data.services.some((service) => service.id === serviceId)) {
+    throw new Error('El servicio que intentas eliminar ya no existe.')
+  }
+
+  return {
+    ...data,
+    services: data.services.filter((service) => service.id !== serviceId),
+  }
+}
+
+function createPromotionId() {
+  return crypto.randomUUID ? `promotion-${crypto.randomUUID()}` : `promotion-${Date.now()}`
+}
+
+function normalizePromotionInput(data, input) {
+  const name = String(input.name ?? '').trim()
+  if (!name) throw new Error('Ingresa el nombre de la promoción.')
+  if (name.length > 80) throw new Error('El nombre no puede superar los 80 caracteres.')
+
+  const description = String(input.description ?? '').trim()
+  if (!description) throw new Error('Ingresa una descripción de la promoción.')
+  if (description.length > 240) {
+    throw new Error('La descripción no puede superar los 240 caracteres.')
+  }
+
+  const rawReservationNumber = String(input.reservationNumber ?? '').trim().toUpperCase()
+  let reservationNumber = ''
+
+  if (rawReservationNumber) {
+    if (rawReservationNumber.length > 20) {
+      throw new Error('El número de reserva no puede superar los 20 caracteres.')
+    }
+
+    const reservation = findReservationByNumber(data.reservations, rawReservationNumber)
+    if (!reservation) {
+      throw new Error(`No se encontró la reserva "${rawReservationNumber}".`)
+    }
+
+    reservationNumber = reservation.code
+  }
+
+  if (!PROMOTION_TYPE_VALUES.has(input.type)) {
+    throw new Error('Selecciona un tipo de promoción válido.')
+  }
+
+  if (!PROMOTION_CATEGORY_VALUES.has(input.category)) {
+    throw new Error('Selecciona una categoría válida.')
+  }
+
+  const discount = Number(input.discount)
+  if (!Number.isFinite(discount) || discount <= 0 || discount > 100) {
+    throw new Error('El descuento debe ser mayor a 0 y como máximo 100%.')
+  }
+
+  const startDate = String(input.startDate ?? '').trim()
+  const endDate = String(input.endDate ?? '').trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+    throw new Error('Selecciona la fecha de inicio de la vigencia.')
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+    throw new Error('Selecciona la fecha de fin de la vigencia.')
+  }
+  if (endDate < startDate) {
+    throw new Error('La fecha de fin no puede ser anterior a la fecha de inicio.')
+  }
+
+  if (!PROMOTION_STATUS_VALUES.has(input.status)) {
+    throw new Error('Selecciona un estado válido.')
+  }
+
+  const image = String(input.image ?? '').trim()
+  if (
+    image &&
+    !image.startsWith('data:image/') &&
+    !/^https?:\/\//i.test(image) &&
+    !image.startsWith('/')
+  ) {
+    throw new Error('La imagen de la promoción no es válida.')
+  }
+
+  return {
+    name,
+    description,
+    reservationNumber,
+    type: input.type,
+    category: input.category,
+    discount: Math.round(discount * 100) / 100,
+    startDate,
+    endDate,
+    status: input.status,
+    visibleOnWeb: input.visibleOnWeb !== false,
+    image,
+  }
+}
+
+export function addPromotionToData(data, input, now = new Date()) {
+  const fields = normalizePromotionInput(data, input)
+  promotionSequence += 1
+
+  const promotion = {
+    id: createPromotionId(),
+    code: `PROM-${String(promotionSequence).padStart(4, '0')}`,
+    ...fields,
+    createdAt: now.toISOString(),
+  }
+
+  return { ...data, promotions: [promotion, ...data.promotions] }
+}
+
+export function updatePromotionInData(data, input, now = new Date()) {
+  const existing = data.promotions.find((promotion) => promotion.id === input.id)
+  if (!existing) throw new Error('La promoción que intentas editar ya no existe.')
+
+  const fields = normalizePromotionInput(data, input)
+  const promotion = { ...existing, ...fields, updatedAt: now.toISOString() }
+
+  return {
+    ...data,
+    promotions: data.promotions.map((item) => (item.id === existing.id ? promotion : item)),
+  }
+}
+
+export function deletePromotionFromData(data, promotionId) {
+  if (!data.promotions.some((promotion) => promotion.id === promotionId)) {
+    throw new Error('La promoción que intentas eliminar ya no existe.')
+  }
+
+  return {
+    ...data,
+    promotions: data.promotions.filter((promotion) => promotion.id !== promotionId),
+  }
+}
+
+export function buildPromotionSummary(promotions, now = new Date()) {
+  const summary = {
+    total: promotions.length,
+    active: 0,
+    expired: 0,
+    scheduled: 0,
+    inactive: 0,
+  }
+
+  promotions.forEach((promotion) => {
+    const status = promotionEffectiveStatus(promotion, now)
+
+    if (status === 'activa') summary.active += 1
+    else if (status === 'vencida') summary.expired += 1
+    else if (status === 'programada') summary.scheduled += 1
+    else summary.inactive += 1
+  })
+
+  return summary
 }
 
 export function roomStatusLabel(status) {
