@@ -5,8 +5,10 @@ import './App.css'
 
 function App() {
   const [session, setSession] = useState(null)
+  const isAuthorizedAdmin =
+    session?.role === 'admin' && session?.authorized === true
 
-  if (!session) {
+  if (!isAuthorizedAdmin) {
     return <Login onLogin={setSession} />
   }
 

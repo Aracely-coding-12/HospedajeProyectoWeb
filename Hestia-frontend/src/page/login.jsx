@@ -380,7 +380,14 @@ function RegisterForm({ onBack, onRegistered }) {
         throw new Error('No se pudo guardar la cuenta.')
       }
 
-      onRegistered(newAdmin)
+      onRegistered({
+        id: newAdmin.id,
+        name: newAdmin.name,
+        email: newAdmin.email,
+        role: newAdmin.role,
+        authorized: newAdmin.authorized,
+        createdAt: newAdmin.createdAt,
+      })
     } catch {
       setFailure('No pudimos crear tu cuenta. Inténtalo de nuevo.')
     } finally {

@@ -28,7 +28,13 @@ import {
   updateRoomStatusInData,
   updateServiceInData,
 } from '../data/hestiaData.js'
-import { getAdminProfile, updateAdminProfile } from '../lib/adminAuth.js'
+import {
+  DEFAULT_SESSION_TIMEOUT_MINUTES,
+  getAdminProfile,
+  updateAdminProfile,
+} from '../lib/adminAuth.js'
+import { useInactivityLogout } from '../lib/useInactivityLogout.js'
+import CerrarSesion from './cerrarSesion.jsx'
 import Clientes from './cliente.jsx'
 import Cuenta from './cuenta.jsx'
 import Habitaciones from './habitaciones.jsx'
@@ -119,7 +125,16 @@ function Admin({ session, onLogout }) {
   const [data, setData] = useState(createInitialData)
   const [view, setView] = useState('inicio')
   const [notice, setNotice] = useState(null)
+  const [logoutOpen, setLogoutOpen] = useState(false)
   const [profile, setProfile] = useState(() => getAdminProfile(session))
+
+  const sessionTimeout =
+    Number(profile.sessionTimeout) || DEFAULT_SESSION_TIMEOUT_MINUTES
+
+  useInactivityLogout({
+    timeoutMinutes: sessionTimeout,
+    onTimeout: onLogout,
+  })
 
   const summary = buildDashboardSummary(data)
   const reservationSummary = buildReservationSummary(data)
@@ -135,6 +150,11 @@ function Admin({ session, onLogout }) {
     const updated = updateAdminProfile(profile, patch)
     setProfile(updated)
     return updated
+  }
+
+  function handleConfirmLogout() {
+    setLogoutOpen(false)
+    onLogout()
   }
 
   function handleCreateReservation(input) {
@@ -227,7 +247,11 @@ function Admin({ session, onLogout }) {
 
   return (
     <div className="flex min-h-svh flex-col bg-[#050505] lg:flex-row">
-      <Sidebar view={view} onNavigate={navigate} onLogout={onLogout} />
+      <Sidebar
+        view={view}
+        onNavigate={navigate}
+        onLogout={() => setLogoutOpen(true)}
+      />
 
       <div className="relative flex min-h-svh flex-1 flex-col">
         <div
@@ -316,6 +340,14 @@ function Admin({ session, onLogout }) {
           </div>
         </main>
       </div>
+
+      <CerrarSesion
+        open={logoutOpen}
+        profile={profile}
+        timeoutMinutes={sessionTimeout}
+        onCancel={() => setLogoutOpen(false)}
+        onConfirm={handleConfirmLogout}
+      />
     </div>
   )
 }

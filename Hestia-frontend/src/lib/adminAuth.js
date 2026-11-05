@@ -1,6 +1,12 @@
 export const ADMINS_KEY = 'hestia_admins_v1'
 const DEFAULT_ADMIN_KEY = 'hestia_default_admin_v1'
 const PASSWORD_MIN_LENGTH = 12
+const PASSWORD_HASH_PREFIX = 'pbkdf2-sha256'
+const PASSWORD_HASH_ITERATIONS = 210000
+const PASSWORD_SALT_BYTES = 16
+
+export const SESSION_TIMEOUT_OPTIONS = [5, 10, 15, 30, 60]
+export const DEFAULT_SESSION_TIMEOUT_MINUTES = 15
 
 export const PASSWORD_HELP =
   '12 caracteres / letras mayúsculas, minúsculas, números y símbolos'
@@ -17,6 +23,7 @@ export const DEFAULT_ADMIN = {
   address: 'Cusco, Perú',
   language: 'es',
   theme: 'oscuro',
+  sessionTimeout: DEFAULT_SESSION_TIMEOUT_MINUTES,
   avatar: '',
   createdAt: Date.UTC(2026, 0, 15),
 }
@@ -41,6 +48,7 @@ const PROFILE_DEFAULTS = {
   address: '',
   language: 'es',
   theme: 'oscuro',
+  sessionTimeout: DEFAULT_SESSION_TIMEOUT_MINUTES,
   avatar: '',
   createdAt: null,
 }
@@ -54,6 +62,7 @@ const PROFILE_FIELDS = [
   'avatar',
   'language',
   'theme',
+  'sessionTimeout',
 ]
 
 export function readStore(key) {
@@ -109,10 +118,96 @@ function isEmailTaken(email, accountId) {
   )
 }
 
-export async function hashPassword(password) {
+function bytesToHex(bytes) {
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+function hexToBytes(hex) {
+  const bytes = new Uint8Array(hex.length / 2)
+  for (let index = 0; index < bytes.length; index += 1) {
+    bytes[index] = Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16)
+  }
+  return bytes
+}
+
+function timingSafeEqualHex(left, right) {
+  if (left.length !== right.length) return false
+
+  let mismatch = 0
+  for (let index = 0; index < left.length; index += 1) {
+    mismatch |= left.charCodeAt(index) ^ right.charCodeAt(index)
+  }
+  return mismatch === 0
+}
+
+async function legacyHashPassword(password) {
   const bytes = new TextEncoder().encode(`hestia:${password}`)
   const digest = await crypto.subtle.digest('SHA-256', bytes)
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return bytesToHex(new Uint8Array(digest))
+}
+
+async function derivePasswordHash(password, salt, iterations) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits'],
+  )
+
+  return crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt,
+      iterations,
+      hash: 'SHA-256',
+    },
+    key,
+    256,
+  )
+}
+
+export async function hashPassword(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(PASSWORD_SALT_BYTES))
+  const derived = new Uint8Array(
+    await derivePasswordHash(password, salt, PASSWORD_HASH_ITERATIONS),
+  )
+
+  return `${PASSWORD_HASH_PREFIX}$${PASSWORD_HASH_ITERATIONS}$${bytesToHex(salt)}$${bytesToHex(derived)}`
+}
+
+async function verifyPassword(password, storedHash) {
+  if (typeof storedHash !== 'string' || storedHash.length === 0) return false
+
+  if (storedHash.startsWith(`${PASSWORD_HASH_PREFIX}$`)) {
+    const parts = storedHash.split('$')
+    if (parts.length !== 4) return false
+
+    const [, iterationsText, saltHex, expectedHex] = parts
+    const iterations = Number(iterationsText)
+
+    if (!Number.isInteger(iterations) || iterations <= 0) return false
+    if (!/^[0-9a-f]+$/i.test(saltHex) || saltHex.length % 2 !== 0) return false
+    if (!/^[0-9a-f]{64}$/i.test(expectedHex)) return false
+
+    try {
+      const derived = new Uint8Array(
+        await derivePasswordHash(password, hexToBytes(saltHex), iterations),
+      )
+      return timingSafeEqualHex(bytesToHex(derived), expectedHex.toLowerCase())
+    } catch {
+      return false
+    }
+  }
+
+  return timingSafeEqualHex(await legacyHashPassword(password), storedHash)
+}
+
+function isSecurePasswordHash(storedHash) {
+  return (
+    typeof storedHash === 'string' &&
+    storedHash.startsWith(`${PASSWORD_HASH_PREFIX}$`)
+  )
 }
 
 export function isValidEmail(value) {
@@ -133,26 +228,54 @@ export function createId() {
 
 export async function authenticate(email, password) {
   const normalizedEmail = normalizeEmail(email)
-  const passwordHash = await hashPassword(password)
+  if (!normalizedEmail || !password) return null
+
   const override = readDefaultOverride()
   const defaultAccount = defaultProfile(override)
-  const defaultPasswordHash =
-    override.passwordHash ?? (await hashPassword(DEFAULT_ADMIN.password))
 
-  if (normalizedEmail === defaultAccount.email && passwordHash === defaultPasswordHash) {
+  if (normalizedEmail === defaultAccount.email) {
+    const storedHash =
+      override.passwordHash ?? (await legacyHashPassword(DEFAULT_ADMIN.password))
+
+    if (!(await verifyPassword(password, storedHash))) return null
+
+    if (!isSecurePasswordHash(storedHash)) {
+      try {
+        writeDefaultOverride({
+          ...override,
+          passwordHash: await hashPassword(password),
+        })
+      } catch {
+        // La migración es opcional y no debe bloquear el acceso.
+      }
+    }
+
     return sanitizeAccount(defaultAccount)
   }
 
-  const admin =
-    readStore(ADMINS_KEY).find(
-      (item) =>
-        item.email === normalizedEmail &&
-        item.passwordHash === passwordHash &&
-        item.role === 'admin' &&
-        item.authorized,
-    ) ?? null
+  const admins = readStore(ADMINS_KEY)
+  const index = admins.findIndex(
+    (admin) =>
+      admin.email === normalizedEmail &&
+      admin.role === 'admin' &&
+      admin.authorized,
+  )
+  if (index === -1) return null
 
-  return admin ? sanitizeAccount(admin) : null
+  const admin = admins[index]
+  if (!(await verifyPassword(password, admin.passwordHash))) return null
+
+  if (!isSecurePasswordHash(admin.passwordHash)) {
+    const upgraded = {
+      ...admin,
+      passwordHash: await hashPassword(password),
+    }
+    admins[index] = upgraded
+    writeStore(ADMINS_KEY, admins)
+    return sanitizeAccount(upgraded)
+  }
+
+  return sanitizeAccount(admin)
 }
 
 export function getAdminProfile(account) {
@@ -175,6 +298,14 @@ export function updateAdminProfile(account, patch) {
     if (patch[field] === undefined) return
     changes[field] = typeof patch[field] === 'string' ? patch[field].trim() : patch[field]
   })
+
+  if (changes.sessionTimeout !== undefined) {
+    const minutes = Number(changes.sessionTimeout)
+    if (!SESSION_TIMEOUT_OPTIONS.includes(minutes)) {
+      throw new Error('Selecciona un tiempo de inactividad válido.')
+    }
+    changes.sessionTimeout = minutes
+  }
 
   if (changes.name !== undefined) {
     if (!changes.name) throw new Error('Ingresa tu nombre completo.')
@@ -221,31 +352,36 @@ export async function changeAdminPassword(account, currentPassword, newPassword)
     throw new Error('La nueva contraseña no cumple los requisitos de seguridad.')
   }
 
-  const currentHash = await hashPassword(currentPassword)
-  const newHash = await hashPassword(newPassword)
-  if (currentHash === newHash) {
+  if (currentPassword === newPassword) {
     throw new Error('La nueva contraseña debe ser diferente a la actual.')
   }
 
   if (account.id === DEFAULT_ADMIN.id) {
     const override = readDefaultOverride()
-    const storedHash = override.passwordHash ?? (await hashPassword(DEFAULT_ADMIN.password))
-    if (currentHash !== storedHash) {
+    const storedHash =
+      override.passwordHash ?? (await legacyHashPassword(DEFAULT_ADMIN.password))
+    if (!(await verifyPassword(currentPassword, storedHash))) {
       throw new Error('La contraseña actual no es correcta.')
     }
 
-    writeDefaultOverride({ ...override, passwordHash: newHash })
+    writeDefaultOverride({
+      ...override,
+      passwordHash: await hashPassword(newPassword),
+    })
     return true
   }
 
   const admins = readStore(ADMINS_KEY)
   const index = admins.findIndex((admin) => admin.id === account.id)
   if (index === -1) throw new Error('No se encontró la cuenta del administrador.')
-  if (admins[index].passwordHash !== currentHash) {
+  if (!(await verifyPassword(currentPassword, admins[index].passwordHash))) {
     throw new Error('La contraseña actual no es correcta.')
   }
 
-  admins[index] = { ...admins[index], passwordHash: newHash }
+  admins[index] = {
+    ...admins[index],
+    passwordHash: await hashPassword(newPassword),
+  }
   if (!writeStore(ADMINS_KEY, admins)) {
     throw new Error('No se pudo actualizar la contraseña.')
   }

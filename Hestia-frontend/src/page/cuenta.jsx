@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import {
   PASSWORD_HELP,
   PASSWORD_RULES,
+  SESSION_TIMEOUT_OPTIONS,
   changeAdminPassword,
   isStrongPassword,
   isValidEmail,
@@ -198,6 +199,15 @@ function CalendarIcon({ className = '' }) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className={className}>
       <rect x="3.5" y="5.5" width="17" height="15" rx="2" />
       <path d="M7.5 3.5v4M16.5 3.5v4M3.5 10h17" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function ClockIcon({ className = '' }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className={className}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -509,6 +519,26 @@ function Cuenta({ profile, onUpdateProfile }) {
       setNotice({
         type: 'error',
         message: error instanceof Error ? error.message : 'No se pudo eliminar la foto.',
+      })
+    }
+  }
+
+  function handleSessionTimeoutChange(event) {
+    const minutes = Number(event.target.value)
+
+    try {
+      onUpdateProfile({ sessionTimeout: minutes })
+      setNotice({
+        type: 'success',
+        message: `La sesión se cerrará automáticamente tras ${minutes} minutos de inactividad.`,
+      })
+    } catch (error) {
+      setNotice({
+        type: 'error',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'No se pudo actualizar la preferencia de inactividad.',
       })
     }
   }
@@ -1051,6 +1081,34 @@ function Cuenta({ profile, onUpdateProfile }) {
                 value="Activadas"
                 hint="Alertas de reservas, pagos y promociones."
               />
+              <div className="flex items-start justify-between gap-3 py-2.5">
+                <div className="flex items-start gap-2">
+                  <ClockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400/80" />
+                  <div>
+                    <label
+                      htmlFor="account-session-timeout"
+                      className="text-[11px] font-medium text-stone-300"
+                    >
+                      Cierre por inactividad
+                    </label>
+                    <p className="mt-0.5 text-[9px] leading-4 text-stone-600">
+                      Tiempo sin actividad antes de cerrar la sesión.
+                    </p>
+                  </div>
+                </div>
+                <select
+                  id="account-session-timeout"
+                  value={profile.sessionTimeout ?? 15}
+                  onChange={handleSessionTimeoutChange}
+                  className="shrink-0 rounded-md border border-amber-400/40 bg-[#0b0a07] px-2 py-1 text-[10px] font-semibold text-amber-100 outline-none transition focus:border-amber-300 focus:ring-2 focus:ring-amber-400/15"
+                >
+                  {SESSION_TIMEOUT_OPTIONS.map((minutes) => (
+                    <option key={minutes} value={minutes}>
+                      {minutes} min
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </section>
 
