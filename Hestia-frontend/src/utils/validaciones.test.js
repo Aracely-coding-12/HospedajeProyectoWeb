@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ADMINS_KEY, DEFAULT_ADMIN, authenticate } from '../lib/adminAuth.js'
-import { esClaveValida, esCorreoValido } from './validaciones.js'
+import {
+  esClaveSegura,
+  esClaveValida,
+  esCorreoUnico,
+  esCorreoValido,
+  esNombreCompletoValido,
+  validarDatosRegistro,
+} from './validaciones.js'
 
 const storage = new Map()
 
@@ -65,4 +72,47 @@ describe('criterios de inicio de sesión', () => {
   })
 
   it.todo('6. lleva al formulario de creación de cuenta al seleccionar “Crear cuenta”')
+})
+
+describe('criterios de registro de administrador', () => {
+  it('1. requiere nombre y apellido', () => {
+    expect(esNombreCompletoValido('Ana Pérez')).toBe(true)
+    expect(esNombreCompletoValido('Ana')).toBe(false)
+    expect(esNombreCompletoValido('   ')).toBe(false)
+  })
+
+  it('2. acepta un correo válido que no esté registrado', () => {
+    const cuentas = [{ email: 'admin@hestia.com' }]
+
+    expect(esCorreoUnico('nuevo@hestia.com', cuentas)).toBe(true)
+    expect(esCorreoUnico('ADMIN@HESTIA.COM', cuentas)).toBe(false)
+    expect(esCorreoUnico('correo-invalido', cuentas)).toBe(false)
+  })
+
+  it('3. requiere una contraseña de al menos 12 caracteres con mayúscula, minúscula, número y símbolo', () => {
+    expect(esClaveSegura('HestiaSegura123!')).toBe(true)
+    expect(esClaveSegura('Hestia123')).toBe(false)
+    expect(esClaveSegura('hestiasegura123!')).toBe(false)
+  })
+
+  it.todo(
+    '4. asigna el rol y los permisos seleccionados; exponer la función que construye la cuenta con su rol y permisos',
+  )
+
+  it('5. valida todos los datos antes de crear la cuenta', () => {
+    const errores = validarDatosRegistro(
+      { nombre: 'Ana', correo: 'admin@hestia.com', clave: 'débil' },
+      [{ email: 'admin@hestia.com' }],
+    )
+
+    expect(errores).toEqual({
+      nombre: 'Ingresa nombre y apellido.',
+      correo: 'El correo electrónico ya está registrado.',
+      clave: 'La contraseña no es segura.',
+    })
+  })
+
+  it.todo(
+    '6. muestra confirmación al crear la cuenta; exponer el resultado visible o el callback de éxito del formulario',
+  )
 })
