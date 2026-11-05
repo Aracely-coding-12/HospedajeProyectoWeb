@@ -33,7 +33,7 @@ function formatServicePrice(amount) {
 
   let grouped = ''
   for (let index = integerPart.length - 1, digits = 0; index >= 0; index -= 1) {
-    grouped = integerPart[index] + grouped
+    grouped = integerPart.charAt(index) + grouped
     digits += 1
     if (digits % 3 === 0 && index > 0) grouped = ` ${grouped}`
   }

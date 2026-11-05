@@ -54,49 +54,12 @@ function emptyForm() {
   }
 }
 
-const HTML_ESCAPES = new Map([
-  ['&', '&amp;'],
-  ['<', '&lt;'],
-  ['>', '&gt;'],
-  ['"', '&quot;'],
-  ["'", '&#39;'],
-])
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(
-    /[&<>"']/g,
-    (character) => HTML_ESCAPES.get(character) ?? character,
-  )
-}
-
-function buildReceiptHtml(payment) {
-  const clientName = payment.client?.name ?? payment.reservation?.guestName ?? '—'
-  const document = payment.client?.document
-    ? `${payment.client.documentType ?? 'DNI'} ${payment.client.document}`
-    : '—'
-  const room = payment.room ? `${payment.room.number} · ${payment.room.type}` : '—'
-  const status = paymentStatusLabel(payment.status ?? 'pagado')
-  const issuedAt = formatFullDate(
-    payment.createdAt ? payment.createdAt.slice(0, 10) : payment.paidOn,
-  )
-
-  const rows = [
-    ['Cliente', clientName],
-    ['Documento', document],
-    ['N° de reserva', payment.reservation?.code ?? '—'],
-    ['Habitación', room],
-    ['Método de pago', paymentMethodLabel(payment.method)],
-    ['Fecha de pago', formatFullDate(payment.paidOn)],
-    ['Estado', status],
-    ['Fecha de registro', issuedAt],
-  ]
-
-  return `<!doctype html>
+const RECEIPT_SHELL = `<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Comprobante ${escapeHtml(payment.code)}</title>
+  <title>Comprobante</title>
   <style>
     :root { color-scheme: light; }
     * { box-sizing: border-box; }
@@ -124,25 +87,18 @@ function buildReceiptHtml(payment) {
     <header>
       <p>Hestia · Hospedaje Cusco</p>
       <h1>Comprobante de pago</h1>
-      <span>${escapeHtml(payment.code)}</span>
+      <span data-field="code"></span>
     </header>
     <div class="body">
       <div class="amount">
         <div>
           <small>Monto pagado</small>
-          <strong>${escapeHtml(formatSoles(payment.amount))}</strong>
+          <strong data-field="amount"></strong>
         </div>
-        <span class="badge">${escapeHtml(status)}</span>
+        <span class="badge" data-field="status"></span>
       </div>
       <table>
-        <tbody>
-          ${rows
-            .map(
-              ([label, value]) =>
-                `<tr><th>${escapeHtml(label)}</th><td>${escapeHtml(value)}</td></tr>`,
-            )
-            .join('')}
-        </tbody>
+        <tbody data-field="rows"></tbody>
       </table>
       <p class="note">Este comprobante acredita el pago registrado en el sistema de Hestia. Consérvalo como constancia de la transacción.</p>
     </div>
@@ -153,6 +109,54 @@ function buildReceiptHtml(payment) {
   </main>
 </body>
 </html>`
+
+function buildReceiptHtml(payment) {
+  const clientName = payment.client?.name ?? payment.reservation?.guestName ?? '—'
+  const document = payment.client?.document
+    ? `${payment.client.documentType ?? 'DNI'} ${payment.client.document}`
+    : '—'
+  const room = payment.room ? `${payment.room.number} · ${payment.room.type}` : '—'
+  const status = paymentStatusLabel(payment.status ?? 'pagado')
+  const issuedAt = formatFullDate(
+    payment.createdAt ? payment.createdAt.slice(0, 10) : payment.paidOn,
+  )
+
+  const rows = [
+    ['Cliente', clientName],
+    ['Documento', document],
+    ['N° de reserva', payment.reservation?.code ?? '—'],
+    ['Habitación', room],
+    ['Método de pago', paymentMethodLabel(payment.method)],
+    ['Fecha de pago', formatFullDate(payment.paidOn)],
+    ['Estado', status],
+    ['Fecha de registro', issuedAt],
+  ]
+
+  const doc = new DOMParser().parseFromString(RECEIPT_SHELL, 'text/html')
+
+  const setText = (selector, value) => {
+    const element = doc.querySelector(selector)
+    if (element) element.textContent = value ?? ''
+  }
+
+  setText('title', `Comprobante ${payment.code ?? ''}`)
+  setText('[data-field="code"]', payment.code)
+  setText('[data-field="amount"]', formatSoles(payment.amount))
+  setText('[data-field="status"]', status)
+
+  const tbody = doc.querySelector('[data-field="rows"]')
+  rows.forEach(([label, value]) => {
+    const row = doc.createElement('tr')
+    const header = doc.createElement('th')
+    const cell = doc.createElement('td')
+
+    header.textContent = label
+    cell.textContent = value
+    row.append(header, cell)
+    tbody?.append(row)
+  })
+
+  return `<!doctype html>\n${doc.documentElement.outerHTML}`
 }
 
 function downloadReceipt(payment) {
