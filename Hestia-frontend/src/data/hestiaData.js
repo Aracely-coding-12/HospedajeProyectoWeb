@@ -811,6 +811,34 @@ function normalizeReservationInput(
   const nights = nightsBetween(checkIn, checkOut)
   if (nights < 1) throw new Error('La reserva debe tener al menos una noche.')
 
+  const guests = Number(input.guests ?? 1)
+  if (!Number.isInteger(guests) || guests < 1) {
+    throw new Error('Indica al menos un huésped.')
+  }
+  if (guests > room.capacity) {
+    throw new Error(`La habitación ${room.number} admite hasta ${room.capacity} huéspedes.`)
+  }
+
+  const promotionCode = String(input.promotionCode ?? '').trim().toUpperCase()
+  let promotion = null
+
+  if (promotionCode) {
+    promotion = data.promotions.find(
+      (item) => String(item.code ?? '').toUpperCase() === promotionCode,
+    )
+    if (!promotion) throw new Error('El código promocional no existe.')
+    if (promotionEffectiveStatus(promotion, now) !== 'activa') {
+      throw new Error('El código promocional no está vigente.')
+    }
+    if (promotion.category !== 'habitacion' && promotion.category !== 'combos') {
+      throw new Error('Esta promoción no aplica a reservas de habitación.')
+    }
+  }
+
+  const subtotal = room.price * nights
+  const discountPercent = promotion ? Number(promotion.discount) || 0 : 0
+  const discountAmount = Math.round(subtotal * discountPercent) / 100
+
   const status =
     input.status === 'pendiente' || input.status === 'confirmada' ? input.status : 'pendiente'
 
@@ -820,8 +848,13 @@ function normalizeReservationInput(
     checkIn,
     checkOut,
     nights,
+    guests,
     status,
-    total: room.price * nights,
+    subtotal,
+    discountPercent,
+    discountAmount,
+    promotionCode: promotion?.code ?? '',
+    total: Math.max(0, subtotal - discountAmount),
   }
 }
 
@@ -907,7 +940,7 @@ export function buildPaymentSummary(data, now = new Date()) {
 export function addReservationToData(data, input, now = new Date()) {
   const fields = normalizeReservationInput(data, input, { now })
 
-  reservationSequence += 1
+  reservationSequence = nextSequence('reservation', data)
   const reservation = {
     id: `reservation-${reservationSequence}`,
     code: `HES-${String(reservationSequence).padStart(4, '0')}`,
@@ -918,6 +951,11 @@ export function addReservationToData(data, input, now = new Date()) {
     checkOut: fields.checkOut,
     status: fields.status,
     nights: fields.nights,
+    guests: fields.guests,
+    subtotal: fields.subtotal,
+    discountPercent: fields.discountPercent,
+    discountAmount: fields.discountAmount,
+    promotionCode: fields.promotionCode,
     total: fields.total,
     createdAt: now.toISOString(),
     paymentIndex: null,
@@ -925,7 +963,7 @@ export function addReservationToData(data, input, now = new Date()) {
 
   let payment = null
   if (input.registerPayment) {
-    paymentSequence += 1
+    paymentSequence = nextSequence('payment', data)
     payment = {
       id: `payment-${reservation.id}`,
       code: `PAG-${String(paymentSequence).padStart(4, '0')}`,
@@ -958,11 +996,30 @@ export function updateReservationInData(data, input, now = new Date()) {
     throw new Error('Solo se pueden editar reservas pendientes o confirmadas.')
   }
 
-  const fields = normalizeReservationInput(data, input, {
-    excludeId: existing.id,
-    allowPast: true,
-    now,
-  })
+  const preservePromotion = input.promotionCode === undefined
+  const fields = normalizeReservationInput(
+    data,
+    {
+      ...input,
+      guests: input.guests ?? existing.guests ?? 1,
+      promotionCode: preservePromotion ? '' : input.promotionCode,
+    },
+    {
+      excludeId: existing.id,
+      allowPast: true,
+      now,
+    },
+  )
+
+  const discountPercent = preservePromotion
+    ? Number(existing.discountPercent) || 0
+    : fields.discountPercent
+  const discountAmount = preservePromotion
+    ? Math.round(fields.subtotal * discountPercent) / 100
+    : fields.discountAmount
+  const total = preservePromotion
+    ? Math.max(0, fields.subtotal - discountAmount)
+    : fields.total
 
   const reservation = {
     ...existing,
@@ -973,7 +1030,12 @@ export function updateReservationInData(data, input, now = new Date()) {
     checkOut: fields.checkOut,
     status: fields.status,
     nights: fields.nights,
-    total: fields.total,
+    guests: fields.guests,
+    subtotal: fields.subtotal,
+    discountPercent,
+    discountAmount,
+    promotionCode: preservePromotion ? existing.promotionCode ?? '' : fields.promotionCode,
+    total,
     updatedAt: now.toISOString(),
   }
 
@@ -1200,7 +1262,7 @@ function normalizePaymentInput(data, input, paymentId = null, now = new Date()) 
 
 export function addPaymentToData(data, input, now = new Date()) {
   const fields = normalizePaymentInput(data, input, null, now)
-  paymentSequence += 1
+  paymentSequence = nextSequence('payment', data)
 
   const payment = {
     id: createPaymentId(),
@@ -1424,7 +1486,7 @@ function normalizePromotionInput(data, input) {
 
 export function addPromotionToData(data, input, now = new Date()) {
   const fields = normalizePromotionInput(data, input)
-  promotionSequence += 1
+  promotionSequence = nextSequence('promotion', data)
 
   const promotion = {
     id: createPromotionId(),
@@ -1701,4 +1763,35 @@ export function updateClientStatusInData(data, clientId, active) {
       client.id === clientId ? { ...client, active, updatedAt: new Date().toISOString() } : client,
     ),
   }
+}
+
+const SEQUENCE_CONFIG = {
+  reservation: { collection: 'reservations', idPrefix: 'reservation-', codePrefix: 'HES-' },
+  payment: { collection: 'payments', idPrefix: 'payment-', codePrefix: 'PAG-' },
+  promotion: { collection: 'promotions', idPrefix: 'promotion-', codePrefix: 'PROM-' },
+}
+
+function numericSuffix(value, prefix) {
+  if (typeof value !== 'string' || !value.startsWith(prefix)) return 0
+  const suffix = value.slice(prefix.length)
+  if (!/^\d+$/.test(suffix)) return 0
+  return Number(suffix)
+}
+
+export function nextSequence(kind, data) {
+  const config = SEQUENCE_CONFIG[kind]
+  if (!config) throw new Error('Tipo de secuencia no válido.')
+
+  const items = Array.isArray(data?.[config.collection]) ? data[config.collection] : []
+  const highest = items.reduce(
+    (current, item) =>
+      Math.max(
+        current,
+        numericSuffix(item?.id, config.idPrefix),
+        numericSuffix(item?.code, config.codePrefix),
+      ),
+    0,
+  )
+
+  return highest + 1
 }

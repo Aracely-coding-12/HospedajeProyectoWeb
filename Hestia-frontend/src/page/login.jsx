@@ -1,563 +1,212 @@
 import { useState } from 'react'
 import hestiaEmblem from '../assets/hestia-emblem.png'
+import { isValidEmail } from '../lib/adminAuth.js'
 import {
-  ADMINS_KEY,
-  DEFAULT_ADMIN,
-  PASSWORD_HELP,
-  PASSWORD_RULES,
-  authenticate,
-  createId,
-  hashPassword,
-  isStrongPassword,
-  isValidEmail,
-  normalizeEmail,
-  readStore,
-  writeStore,
-} from '../lib/adminAuth.js'
+  AlertIcon,
+  ArrowRightIcon,
+  EyeIcon,
+  EyeOffIcon,
+  LockIcon,
+  MailIcon,
+  ShieldIcon,
+} from '../components/cliente/icons.jsx'
+import {
+  fieldErrorClass,
+  inputClass,
+  labelClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+} from '../components/cliente/ui.jsx'
 
-const labelClass = 'mb-1.5 block text-xs font-medium tracking-wide text-amber-100/90'
-
-const primaryButtonClass =
-  'w-full rounded-md bg-linear-to-r from-amber-200 via-yellow-400 to-amber-600 px-4 py-3 font-serif text-base font-bold tracking-wide text-black shadow-[0_12px_30px_-14px_rgba(245,200,66,0.8)] transition hover:brightness-110 focus:outline-none focus:ring-4 focus:ring-amber-400/25 disabled:cursor-not-allowed disabled:opacity-60'
-
-const linkClass = 'font-semibold text-amber-400 underline underline-offset-4 transition hover:text-amber-300'
-
-function inputClass(hasError = false) {
-  return [
-    'w-full rounded-md border bg-black/50 px-3.5 py-2.5 text-sm text-amber-50 outline-none transition',
-    'placeholder:text-stone-600 focus:ring-2',
-    hasError
-      ? 'border-rose-500/80 focus:border-rose-400 focus:ring-rose-500/15'
-      : 'border-amber-400/55 focus:border-amber-300 focus:ring-amber-400/15',
-  ].join(' ')
-}
-
-function CheckIcon({ className = '' }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true" className={className}>
-      <path d="m5 12.5 4.2 4.2L19 6.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function EyeIcon({ className = '' }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className={className}>
-      <path d="M2.5 12S5.5 6.5 12 6.5 21.5 12 21.5 12 18.5 17.5 12 17.5 2.5 12 2.5 12Z" />
-      <circle cx="12" cy="12" r="2.8" />
-    </svg>
-  )
-}
-
-function EyeOffIcon({ className = '' }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true" className={className}>
-      <path d="M2.5 12S5.5 6.5 12 6.5 21.5 12 21.5 12 18.5 17.5 12 17.5 2.5 12 2.5 12Z" />
-      <circle cx="12" cy="12" r="2.8" />
-      <path d="M4 4l16 16" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function AlertIcon({ className = '' }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true" className={className}>
-      <path d="M12 7v6" strokeLinecap="round" />
-      <path d="M12 17h.01" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function BrandHeader() {
-  return (
-    <header className="flex flex-col items-center">
-      <div className="relative flex items-center justify-center">
-        <div
-          aria-hidden="true"
-          className="absolute h-40 w-40 rounded-full bg-amber-400/10 blur-2xl"
-        />
-        <img
-          src={hestiaEmblem}
-          alt=""
-          className="relative h-32 w-auto object-contain sm:h-36"
-        />
-      </div>
-      <p className="brand-font brand-glow mt-1 bg-linear-to-b from-amber-100 via-amber-300 to-amber-600 bg-clip-text text-[44px] leading-none text-transparent">
-        Hestia
-      </p>
-    </header>
-  )
-}
-
-function AuthShell({ children, footer }) {
-  return (
-    <main className="relative flex min-h-svh items-center justify-center overflow-hidden bg-[#050505] px-4 py-10">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-32 top-1/3 h-72 w-72 rounded-full bg-amber-500/10 blur-3xl" />
-        <div className="absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-yellow-500/10 blur-3xl" />
-        <div className="absolute left-1/2 top-0 h-px w-2/3 -translate-x-1/2 bg-linear-to-r from-transparent via-amber-400/50 to-transparent" />
-      </div>
-
-      <div className="relative z-10 w-full max-w-[390px]">
-        <section className="relative overflow-hidden rounded-2xl border border-amber-400/70 bg-[#080705] px-6 py-8 shadow-[0_0_80px_-24px_rgba(245,200,66,0.55)] sm:px-9 sm:py-10">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-10 top-0 h-px bg-linear-to-r from-transparent via-amber-300 to-transparent"
-          />
-          <div className="relative">{children}</div>
-        </section>
-        {footer}
-      </div>
-    </main>
-  )
-}
-
-function PasswordToggle({ visible, onToggle }) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-label={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-      aria-pressed={visible}
-      className="absolute inset-y-0 right-2 my-auto flex h-8 w-8 items-center justify-center rounded-md text-amber-400/80 transition hover:bg-amber-400/10 hover:text-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40"
-    >
-      {visible ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
-    </button>
-  )
-}
-
-function FieldError({ id, children }) {
-  return (
-    <p id={id} role="alert" className="mt-1.5 text-[11px] leading-4 text-rose-400">
-      {children}
-    </p>
-  )
-}
-
-function DemoAccess({ onUse }) {
-  return (
-    <details className="mt-4 text-center">
-      <summary className="mx-auto w-max cursor-pointer list-none text-[10px] uppercase tracking-[0.22em] text-stone-600 transition hover:text-amber-400/80 [&::-webkit-details-marker]:hidden">
-        Acceso de demostración
-      </summary>
-      <div className="mt-3 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 text-xs text-stone-500">
-        <p className="font-mono text-[11px] text-stone-400">admin@hestia.com · Admin123!2026</p>
-        <button type="button" onClick={onUse} className={`mt-2 text-[11px] ${linkClass}`}>
-          Usar estas credenciales
-        </button>
-      </div>
-    </details>
-  )
-}
-
-function ResultCard({ variant, title, description, actionLabel, onAction }) {
-  const isSuccess = variant === 'success'
-
-  return (
-    <main className="relative flex min-h-svh items-center justify-center overflow-hidden bg-[#050505] px-4 py-10">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-500/10 blur-3xl" />
-        <div className="absolute left-1/2 top-0 h-px w-1/2 -translate-x-1/2 bg-linear-to-r from-transparent via-amber-400/50 to-transparent" />
-      </div>
-
-      <section
-        role={isSuccess ? 'status' : 'alert'}
-        className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl border border-amber-500/60 bg-[#080705] px-8 py-12 text-center shadow-[0_0_80px_-24px_rgba(245,200,66,0.55)]"
-      >
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-12 top-0 h-px bg-linear-to-r from-transparent via-amber-300 to-transparent"
-        />
-        <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-2 border-amber-400/90 text-amber-300 shadow-[0_0_30px_-6px_rgba(245,200,66,0.5)]">
-          {isSuccess ? <CheckIcon className="h-10 w-10" /> : <AlertIcon className="h-10 w-10" />}
-        </span>
-        <h1 className="brand-glow mb-0 mt-6 font-serif text-2xl font-semibold tracking-wide text-amber-300">{title}</h1>
-        {description && <p className="mt-3 text-sm leading-6 text-stone-400">{description}</p>}
-        {onAction && (
-          <button
-            type="button"
-            onClick={onAction}
-            className="mt-7 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-400 transition hover:text-amber-300"
-          >
-            {actionLabel}
-          </button>
-        )}
-      </section>
-    </main>
-  )
-}
-
-function LoginForm({ onLogin, onCreateAccount }) {
+function Login({ onLogin, onBackToClient }) {
   const [form, setForm] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [failure, setFailure] = useState(null)
+  const [failure, setFailure] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   function handleChange(event) {
     const { name, value } = event.target
     setForm((current) => ({ ...current, [name]: value }))
     setErrors((current) => ({ ...current, [name]: undefined }))
-  }
-
-  function fillDemoCredentials() {
-    setForm({ email: DEFAULT_ADMIN.email, password: DEFAULT_ADMIN.password })
-    setErrors({})
+    setFailure('')
   }
 
   async function handleSubmit(event) {
     event.preventDefault()
-
     const nextErrors = {}
-    if (!form.email.trim()) nextErrors.email = 'Ingresa tu correo electrónico.'
-    else if (!isValidEmail(form.email)) nextErrors.email = 'Ingresa un correo electrónico válido.'
 
+    if (!form.email.trim()) nextErrors.email = 'Ingresa tu correo electrónico.'
+    else if (!isValidEmail(form.email)) nextErrors.email = 'Ingresa un correo válido.'
     if (!form.password) nextErrors.password = 'Ingresa tu contraseña.'
-    else if (!isStrongPassword(form.password)) nextErrors.password = PASSWORD_HELP
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors)
       return
     }
 
-    setIsSubmitting(true)
-    setFailure(null)
-
+    setSubmitting(true)
+    setFailure('')
     try {
-      const admin = await authenticate(form.email, form.password)
-      if (!admin) {
-        setFailure('El correo o la contraseña no son correctos. Verifica tus datos e inténtalo de nuevo.')
-        return
-      }
-      onLogin(admin)
-    } catch {
-      setFailure('No pudimos validar tus credenciales. Inténtalo de nuevo.')
+      await onLogin({ email: form.email, password: form.password })
+    } catch (error) {
+      setFailure(
+        error instanceof Error
+          ? error.message
+          : 'No pudimos validar tus credenciales de administrador.',
+      )
     } finally {
-      setIsSubmitting(false)
+      setSubmitting(false)
     }
   }
 
-  if (failure) {
-    return (
-      <ResultCard
-        variant="error"
-        title="Error: Algo salió mal"
-        description={failure}
-        actionLabel="Volver a intentar"
-        onAction={() => {
-          setFailure(null)
-          setErrors({})
-        }}
-      />
-    )
-  }
-
   return (
-    <AuthShell footer={<DemoAccess onUse={fillDemoCredentials} />}>
-      <h1 className="sr-only">Inicio de sesión</h1>
-      <BrandHeader />
+    <div className="relative flex min-h-svh flex-col overflow-hidden bg-[#050505] text-stone-300">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-32 top-0 h-96 w-96 rounded-full bg-amber-500/10 blur-3xl" />
+        <div className="absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-yellow-500/10 blur-3xl" />
+        <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-amber-400/50 to-transparent" />
+      </div>
 
-      <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-5">
-        <div>
-          <label htmlFor="login-email" className={labelClass}>
-            Correo:
-          </label>
-          <input
-            id="login-email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={form.email}
-            onChange={handleChange}
-            className={inputClass(Boolean(errors.email))}
-            aria-invalid={Boolean(errors.email)}
-            aria-describedby={errors.email ? 'login-email-error' : undefined}
-          />
-          {errors.email && <FieldError id="login-email-error">{errors.email}</FieldError>}
-        </div>
-
-        <div>
-          <label htmlFor="login-password" className={labelClass}>
-            Contraseña:
-          </label>
-          <div className="relative">
-            <input
-              id="login-password"
-              name="password"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="current-password"
-              required
-              value={form.password}
-              onChange={handleChange}
-              className={`${inputClass(Boolean(errors.password))} pr-11`}
-              aria-invalid={Boolean(errors.password)}
-              aria-describedby={errors.password ? 'login-password-message' : 'login-password-help'}
-            />
-            <PasswordToggle visible={showPassword} onToggle={() => setShowPassword((current) => !current)} />
+      <div className="relative flex flex-1 items-center justify-center px-4 py-10 sm:px-6">
+        <div className="w-full max-w-md">
+          <div className="flex flex-col items-center text-center">
+            <img src={hestiaEmblem} alt="" className="h-24 w-auto object-contain" />
+            <p className="brand-font brand-glow mt-1 bg-linear-to-b from-amber-100 via-amber-300 to-amber-600 bg-clip-text text-[42px] leading-none text-transparent">
+              Hestia
+            </p>
+            <p className="mt-1 text-[9px] uppercase tracking-[0.24em] text-stone-500">
+              Hospedaje Cusco
+            </p>
           </div>
-          <p
-            id={errors.password ? 'login-password-message' : 'login-password-help'}
-            className={`mt-1.5 text-[11px] leading-4 ${errors.password ? 'text-rose-400' : 'text-amber-100/40'}`}
-          >
-            {errors.password ?? PASSWORD_HELP}
+
+          <div className="mt-7 rounded-2xl border border-amber-400/50 bg-[#080705] p-6 shadow-[0_30px_90px_-24px_rgba(0,0,0,0.95)] sm:p-7">
+            <div className="flex items-start gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-amber-400/50 bg-amber-400/10 text-amber-300">
+                <ShieldIcon className="h-5 w-5" />
+              </span>
+              <div>
+                <h1 className="text-xl font-bold text-white">Administración de Hestia</h1>
+                <p className="mt-1 text-xs leading-5 text-stone-400">
+                  Acceso exclusivo del administrador del hospedaje.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
+              <div>
+                <label htmlFor="admin-login-email" className={labelClass}>
+                  Correo del administrador:
+                </label>
+                <div className="relative">
+                  <MailIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-400/60" />
+                  <input
+                    id="admin-login-email"
+                    name="email"
+                    type="email"
+                    autoComplete="username"
+                    required
+                    value={form.email}
+                    onChange={handleChange}
+                    className={`${inputClass} pl-9`}
+                    aria-invalid={Boolean(errors.email)}
+                    aria-describedby={errors.email ? 'admin-login-email-error' : undefined}
+                  />
+                </div>
+                {errors.email && (
+                  <p id="admin-login-email-error" className={fieldErrorClass}>
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="admin-login-password" className={labelClass}>
+                  Contraseña:
+                </label>
+                <div className="relative">
+                  <LockIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-400/60" />
+                  <input
+                    id="admin-login-password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    required
+                    value={form.password}
+                    onChange={handleChange}
+                    className={`${inputClass} pl-9 pr-11`}
+                    aria-invalid={Boolean(errors.password)}
+                    aria-describedby={
+                      errors.password ? 'admin-login-password-error' : undefined
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    aria-pressed={showPassword}
+                    className="absolute inset-y-0 right-2 my-auto flex h-8 w-8 items-center justify-center rounded-md text-amber-400/80 transition hover:bg-amber-400/10 hover:text-amber-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40"
+                  >
+                    {showPassword ? (
+                      <EyeOffIcon className="h-4 w-4" />
+                    ) : (
+                      <EyeIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p id="admin-login-password-error" className={fieldErrorClass}>
+                    {errors.password}
+                  </p>
+                )}
+              </div>
+
+              {failure && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 rounded-md border border-rose-500/40 bg-rose-500/10 px-3 py-2.5 text-xs leading-5 text-rose-100"
+                >
+                  <AlertIcon className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{failure}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className={`${primaryButtonClass} w-full py-3`}
+              >
+                {submitting ? 'Validando acceso…' : 'Entrar al panel'}
+                {!submitting && <ArrowRightIcon className="h-4 w-4" />}
+              </button>
+            </form>
+
+            <div className="mt-5 flex items-start gap-2 rounded-md border border-amber-400/20 bg-amber-400/5 px-3 py-2.5 text-[10px] leading-4 text-stone-400">
+              <ShieldIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-300" />
+              <p>
+                Las cuentas de cliente no tienen acceso a esta sección. El panel se cierra
+                automáticamente tras un periodo de inactividad.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 text-center">
+            <button
+              type="button"
+              onClick={onBackToClient}
+              className={`${secondaryButtonClass} text-xs`}
+            >
+              Volver al sitio de clientes
+            </button>
+          </div>
+
+          <p className="mt-6 text-center text-[10px] text-stone-600">
+            © {new Date().getFullYear()} Hestia Hospedaje Cusco · Acceso administrativo
           </p>
         </div>
-
-        <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
-          {isSubmitting ? 'Validando…' : 'Iniciar sesión'}
-        </button>
-      </form>
-
-      <p className="mt-6 text-center text-sm text-stone-400">
-        ¿No tienes una cuenta?{' '}
-        <button type="button" onClick={onCreateAccount} className={linkClass}>
-          Crear cuenta
-        </button>
-      </p>
-    </AuthShell>
+      </div>
+    </div>
   )
-}
-
-function RegisterForm({ onBack, onRegistered }) {
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
-  const [errors, setErrors] = useState({})
-  const [showPassword, setShowPassword] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [failure, setFailure] = useState(null)
-
-  function handleChange(event) {
-    const { name, value } = event.target
-    setForm((current) => ({ ...current, [name]: value }))
-    setErrors((current) => ({ ...current, [name]: undefined }))
-  }
-
-  async function handleSubmit(event) {
-    event.preventDefault()
-
-    const nextErrors = {}
-    if (!form.name.trim()) nextErrors.name = 'Ingresa tu nombre.'
-    else if (form.name.trim().length < 2) nextErrors.name = 'El nombre debe tener al menos 2 caracteres.'
-
-    if (!form.email.trim()) nextErrors.email = 'Ingresa tu correo electrónico.'
-    else if (!isValidEmail(form.email)) nextErrors.email = 'Ingresa un correo electrónico válido.'
-
-    if (!form.password) nextErrors.password = 'Crea una contraseña.'
-    else if (!isStrongPassword(form.password)) nextErrors.password = 'La contraseña debe cumplir todos los requisitos.'
-
-    if (!form.confirm) nextErrors.confirm = 'Confirma tu contraseña.'
-    else if (form.confirm !== form.password) nextErrors.confirm = 'Las contraseñas no coinciden.'
-
-    if (Object.keys(nextErrors).length > 0) {
-      setErrors(nextErrors)
-      return
-    }
-
-    setIsSubmitting(true)
-    setFailure(null)
-
-    try {
-      const email = normalizeEmail(form.email)
-      const admins = readStore(ADMINS_KEY)
-      const emailExists = email === DEFAULT_ADMIN.email || admins.some((admin) => admin.email === email)
-
-      if (emailExists) {
-        setErrors({ email: 'Ya existe una cuenta con este correo electrónico.' })
-        return
-      }
-
-      const newAdmin = {
-        id: createId(),
-        name: form.name.trim(),
-        email,
-        passwordHash: await hashPassword(form.password),
-        role: 'admin',
-        authorized: true,
-        createdAt: Date.now(),
-      }
-
-      if (!writeStore(ADMINS_KEY, [...admins, newAdmin])) {
-        throw new Error('No se pudo guardar la cuenta.')
-      }
-
-      onRegistered({
-        id: newAdmin.id,
-        name: newAdmin.name,
-        email: newAdmin.email,
-        role: newAdmin.role,
-        authorized: newAdmin.authorized,
-        createdAt: newAdmin.createdAt,
-      })
-    } catch {
-      setFailure('No pudimos crear tu cuenta. Inténtalo de nuevo.')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  if (failure) {
-    return (
-      <ResultCard
-        variant="error"
-        title="Error: Algo salió mal"
-        description={failure}
-        actionLabel="Volver a intentar"
-        onAction={() => setFailure(null)}
-      />
-    )
-  }
-
-  return (
-    <AuthShell>
-      <h1 className="sr-only">Crear cuenta</h1>
-      <BrandHeader />
-
-      <p className="mb-0 mt-5 text-center text-[10px] font-semibold uppercase tracking-[0.32em] text-amber-500">
-        Crear cuenta
-      </p>
-
-      <form onSubmit={handleSubmit} noValidate className="mt-5 space-y-4">
-        <div>
-          <label htmlFor="register-name" className={labelClass}>
-            Nombre completo:
-          </label>
-          <input
-            id="register-name"
-            name="name"
-            type="text"
-            autoComplete="name"
-            required
-            value={form.name}
-            onChange={handleChange}
-            placeholder="María Fernández"
-            className={inputClass(Boolean(errors.name))}
-            aria-invalid={Boolean(errors.name)}
-            aria-describedby={errors.name ? 'register-name-error' : undefined}
-          />
-          {errors.name && <FieldError id="register-name-error">{errors.name}</FieldError>}
-        </div>
-
-        <div>
-          <label htmlFor="register-email" className={labelClass}>
-            Correo electrónico:
-          </label>
-          <input
-            id="register-email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={form.email}
-            onChange={handleChange}
-            placeholder="nombre@hestia.com"
-            className={inputClass(Boolean(errors.email))}
-            aria-invalid={Boolean(errors.email)}
-            aria-describedby={errors.email ? 'register-email-error' : undefined}
-          />
-          {errors.email && <FieldError id="register-email-error">{errors.email}</FieldError>}
-        </div>
-
-        <div>
-          <label htmlFor="register-password" className={labelClass}>
-            Contraseña:
-          </label>
-          <div className="relative">
-            <input
-              id="register-password"
-              name="password"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="new-password"
-              required
-              value={form.password}
-              onChange={handleChange}
-              placeholder="Crea una contraseña segura"
-              className={`${inputClass(Boolean(errors.password))} pr-11`}
-              aria-invalid={Boolean(errors.password)}
-              aria-describedby={
-                errors.password ? 'register-password-error register-password-rules' : 'register-password-rules'
-              }
-            />
-            <PasswordToggle visible={showPassword} onToggle={() => setShowPassword((current) => !current)} />
-          </div>
-          {errors.password && <FieldError id="register-password-error">{errors.password}</FieldError>}
-          <ul id="register-password-rules" className="mt-2 grid gap-1 sm:grid-cols-2">
-            {PASSWORD_RULES.map((rule) => {
-              const passed = rule.test(form.password)
-              return (
-                <li
-                  key={rule.id}
-                  className={`flex items-center gap-1.5 text-[10px] ${passed ? 'text-amber-400' : 'text-stone-600'}`}
-                >
-                  <span
-                    className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full ${
-                      passed ? 'bg-amber-400/20 text-amber-300' : 'bg-white/5 text-stone-600'
-                    }`}
-                  >
-                    <CheckIcon className="h-2 w-2" />
-                  </span>
-                  {rule.label}
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-
-        <div>
-          <label htmlFor="register-confirm" className={labelClass}>
-            Confirmar contraseña:
-          </label>
-          <input
-            id="register-confirm"
-            name="confirm"
-            type={showPassword ? 'text' : 'password'}
-            autoComplete="new-password"
-            required
-            value={form.confirm}
-            onChange={handleChange}
-            placeholder="Repite tu contraseña"
-            className={inputClass(Boolean(errors.confirm))}
-            aria-invalid={Boolean(errors.confirm)}
-            aria-describedby={errors.confirm ? 'register-confirm-error' : undefined}
-          />
-          {errors.confirm && <FieldError id="register-confirm-error">{errors.confirm}</FieldError>}
-        </div>
-
-        <button type="submit" disabled={isSubmitting} className={primaryButtonClass}>
-          {isSubmitting ? 'Creando cuenta…' : 'Crear cuenta'}
-        </button>
-      </form>
-
-      <p className="mt-6 text-center text-sm text-stone-400">
-        ¿Ya tienes una cuenta?{' '}
-        <button type="button" onClick={onBack} className={linkClass}>
-          Inicia sesión
-        </button>
-      </p>
-    </AuthShell>
-  )
-}
-
-function Login({ onLogin }) {
-  const [view, setView] = useState('login')
-  const [authenticated, setAuthenticated] = useState(null)
-
-  if (authenticated) {
-    return (
-      <ResultCard
-        variant="success"
-        title="Sesión exitosa"
-        description={`Bienvenido, ${authenticated.name}. Sesión iniciada como ${authenticated.email}.`}
-        actionLabel="Continuar al panel"
-        onAction={() => onLogin(authenticated)}
-      />
-    )
-  }
-
-  if (view === 'register') {
-    return <RegisterForm onBack={() => setView('login')} onRegistered={setAuthenticated} />
-  }
-
-  return <LoginForm onLogin={setAuthenticated} onCreateAccount={() => setView('register')} />
 }
 
 export default Login

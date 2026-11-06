@@ -12,7 +12,6 @@ import {
   buildReservationSummary,
   cancelReservationInData,
   confirmReservationInData,
-  createInitialData,
   deletePaymentFromData,
   deletePromotionFromData,
   deleteReservationFromData,
@@ -33,6 +32,7 @@ import {
   getAdminProfile,
   updateAdminProfile,
 } from '../lib/adminAuth.js'
+import { formatNotificationTime } from '../lib/hestiaStore.js'
 import { useInactivityLogout } from '../lib/useInactivityLogout.js'
 import CerrarSesion from './cerrarSesion.jsx'
 import Clientes from './cliente.jsx'
@@ -43,6 +43,33 @@ import Pagos from './pago.jsx'
 import Promociones from './promociones.jsx'
 import Reservas from './reserva.jsx'
 import Servicios from './servicios.jsx'
+
+function BellIcon({ className = '' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden="true"
+      className={className}
+    >
+      <path
+        d="M18 9a6 6 0 1 0-12 0c0 5-2 6.5-2 6.5h16S18 14 18 9Z"
+        strokeLinejoin="round"
+      />
+      <path d="M9.8 19a2.4 2.4 0 0 0 4.4 0" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function notificationTone(type) {
+  if (type === 'cliente') return 'bg-sky-400'
+  if (type === 'pagos') return 'bg-emerald-400'
+  if (type === 'servicios') return 'bg-violet-400'
+  if (type === 'reserva') return 'bg-amber-400'
+  return 'bg-stone-400'
+}
 
 const NAV_ITEMS = [
   { id: 'inicio', label: 'Inicio', view: 'inicio' },
@@ -121,15 +148,24 @@ function Sidebar({ view, onNavigate, onLogout }) {
   )
 }
 
-function Admin({ session, onLogout }) {
-  const [data, setData] = useState(createInitialData)
+function Admin({
+  session,
+  onLogout,
+  data,
+  onDataChange,
+  notifications = [],
+  onNotificationsChange,
+}) {
+  const setData = onDataChange
   const [view, setView] = useState('inicio')
   const [notice, setNotice] = useState(null)
   const [logoutOpen, setLogoutOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [profile, setProfile] = useState(() => getAdminProfile(session))
 
   const sessionTimeout =
     Number(profile.sessionTimeout) || DEFAULT_SESSION_TIMEOUT_MINUTES
+  const unreadCount = notifications.filter((notification) => !notification.read).length
 
   useInactivityLogout({
     timeoutMinutes: sessionTimeout,
@@ -142,12 +178,34 @@ function Admin({ session, onLogout }) {
 
   function navigate(nextView) {
     setNotice(null)
+    setNotificationsOpen(false)
     setView(nextView)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  function markAllNotificationsRead() {
+    onNotificationsChange(
+      notifications.map((notification) => ({ ...notification, read: true })),
+    )
+  }
+
+  function openNotification(notification) {
+    onNotificationsChange(
+      notifications.map((item) =>
+        item.id === notification.id ? { ...item, read: true } : item,
+      ),
+    )
+
+    if (notification.target) navigate(notification.target)
+    else setNotificationsOpen(false)
+  }
+
   function handleUpdateProfile(patch) {
-    const updated = updateAdminProfile(profile, patch)
+    const updated = updateAdminProfile(
+      profile,
+      patch,
+      data.clients.map((client) => client.email),
+    )
     setProfile(updated)
     return updated
   }
@@ -259,7 +317,108 @@ function Admin({ session, onLogout }) {
           className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-amber-400/50 to-transparent"
         />
 
-        <div className="flex justify-end px-4 pt-5 sm:px-8 lg:px-12">
+        <div className="flex items-center justify-end gap-3 px-4 pt-5 sm:px-8 lg:px-12">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setNotificationsOpen((current) => !current)}
+              aria-label={
+                unreadCount > 0
+                  ? `Notificaciones, ${unreadCount} sin leer`
+                  : 'Notificaciones'
+              }
+              aria-expanded={notificationsOpen}
+              className="relative rounded-md border border-amber-400/30 bg-black/30 p-2 text-stone-300 transition hover:border-amber-300 hover:text-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40"
+            >
+              <BellIcon className="h-4 w-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-400 px-1 text-[9px] font-bold leading-none text-black">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {notificationsOpen && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Cerrar notificaciones"
+                  onClick={() => setNotificationsOpen(false)}
+                  className="fixed inset-0 z-40 cursor-default"
+                />
+                <div className="absolute right-0 z-50 mt-2 w-[min(23rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-amber-400/50 bg-[#080705] shadow-[0_24px_70px_-20px_rgba(0,0,0,0.95)]">
+                  <div className="flex items-center justify-between gap-3 border-b border-amber-400/20 px-4 py-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">Notificaciones</p>
+                      <p className="text-[10px] text-stone-500">
+                        {unreadCount > 0 ? `${unreadCount} sin leer` : 'Todo al día'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={markAllNotificationsRead}
+                      disabled={unreadCount === 0}
+                      className="text-[10px] font-semibold text-amber-400 transition hover:text-amber-300 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Marcar todas
+                    </button>
+                  </div>
+
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <p className="px-4 py-8 text-center text-xs text-stone-500">
+                        Aún no hay novedades de los clientes.
+                      </p>
+                    ) : (
+                      notifications.map((notification) => (
+                        <button
+                          key={notification.id}
+                          type="button"
+                          onClick={() => openNotification(notification)}
+                          className={`flex w-full items-start gap-2.5 border-b border-white/5 px-4 py-3 text-left transition last:border-b-0 hover:bg-amber-400/5 ${
+                            notification.read ? 'bg-transparent' : 'bg-amber-400/[0.04]'
+                          }`}
+                        >
+                          <span
+                            className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notificationTone(
+                              notification.type,
+                            )}`}
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-start justify-between gap-2">
+                              <span
+                                className={`text-xs ${
+                                  notification.read
+                                    ? 'font-medium text-stone-300'
+                                    : 'font-semibold text-white'
+                                }`}
+                              >
+                                {notification.title}
+                              </span>
+                              {!notification.read && (
+                                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+                              )}
+                            </span>
+                            <span className="mt-0.5 block text-[11px] leading-4 text-stone-500">
+                              {notification.message}
+                            </span>
+                            <span className="mt-1 block text-[9px] uppercase tracking-wide text-stone-600">
+                              {formatNotificationTime(notification.createdAt)}
+                            </span>
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+
+                  <p className="border-t border-amber-400/10 px-4 py-2 text-[9px] text-stone-600">
+                    Las novedades se sincronizan entre las pestañas abiertas.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={() => navigate('cuenta')}

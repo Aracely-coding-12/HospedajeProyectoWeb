@@ -24,7 +24,7 @@ export function esCorreoUnico(correo, cuentas = []) {
 export function esClaveSegura(clave) {
   return (
     typeof clave === 'string' &&
-    clave.length >= 12 &&
+    esClaveValida(clave) &&
     /[A-Z]/.test(clave) &&
     /[a-z]/.test(clave) &&
     /\d/.test(clave) &&

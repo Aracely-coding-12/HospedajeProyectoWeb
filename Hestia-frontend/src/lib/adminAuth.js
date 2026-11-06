@@ -118,6 +118,18 @@ function isEmailTaken(email, accountId) {
   )
 }
 
+export function isAdminEmail(value) {
+  const email = normalizeEmail(value)
+  if (!email) return false
+
+  const defaultAccount = defaultProfile(readDefaultOverride())
+  if (email === defaultAccount.email) return true
+
+  return readStore(ADMINS_KEY).some(
+    (admin) => admin.role === 'admin' && admin.email === email,
+  )
+}
+
 function bytesToHex(bytes) {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
@@ -176,7 +188,7 @@ export async function hashPassword(password) {
   return `${PASSWORD_HASH_PREFIX}$${PASSWORD_HASH_ITERATIONS}$${bytesToHex(salt)}$${bytesToHex(derived)}`
 }
 
-async function verifyPassword(password, storedHash) {
+export async function verifyPassword(password, storedHash) {
   if (typeof storedHash !== 'string' || storedHash.length === 0) return false
 
   if (storedHash.startsWith(`${PASSWORD_HASH_PREFIX}$`)) {
@@ -233,49 +245,26 @@ export async function authenticate(email, password) {
   const override = readDefaultOverride()
   const defaultAccount = defaultProfile(override)
 
-  if (normalizedEmail === defaultAccount.email) {
-    const storedHash =
-      override.passwordHash ?? (await legacyHashPassword(DEFAULT_ADMIN.password))
+  // El panel de administración es exclusivo de la cuenta principal de Hestia.
+  if (normalizedEmail !== defaultAccount.email) return null
 
-    if (!(await verifyPassword(password, storedHash))) return null
+  const storedHash =
+    override.passwordHash ?? (await legacyHashPassword(DEFAULT_ADMIN.password))
 
-    if (!isSecurePasswordHash(storedHash)) {
-      try {
-        writeDefaultOverride({
-          ...override,
-          passwordHash: await hashPassword(password),
-        })
-      } catch {
-        // La migración es opcional y no debe bloquear el acceso.
-      }
+  if (!(await verifyPassword(password, storedHash))) return null
+
+  if (!isSecurePasswordHash(storedHash)) {
+    try {
+      writeDefaultOverride({
+        ...override,
+        passwordHash: await hashPassword(password),
+      })
+    } catch {
+      // La migración es opcional y no debe bloquear el acceso.
     }
-
-    return sanitizeAccount(defaultAccount)
   }
 
-  const admins = readStore(ADMINS_KEY)
-  const index = admins.findIndex(
-    (admin) =>
-      admin.email === normalizedEmail &&
-      admin.role === 'admin' &&
-      admin.authorized,
-  )
-  if (index === -1) return null
-
-  const admin = admins[index]
-  if (!(await verifyPassword(password, admin.passwordHash))) return null
-
-  if (!isSecurePasswordHash(admin.passwordHash)) {
-    const upgraded = {
-      ...admin,
-      passwordHash: await hashPassword(password),
-    }
-    admins[index] = upgraded
-    writeStore(ADMINS_KEY, admins)
-    return sanitizeAccount(upgraded)
-  }
-
-  return sanitizeAccount(admin)
+  return sanitizeAccount(defaultAccount)
 }
 
 export function getAdminProfile(account) {
@@ -290,7 +279,7 @@ export function getAdminProfile(account) {
   return { ...PROFILE_DEFAULTS, ...sanitizeAccount(stored) }
 }
 
-export function updateAdminProfile(account, patch) {
+export function updateAdminProfile(account, patch, reservedEmails = []) {
   if (!account) throw new Error('No se encontró la cuenta del administrador.')
 
   const changes = {}
@@ -320,6 +309,13 @@ export function updateAdminProfile(account, patch) {
     }
     if (isEmailTaken(changes.email, account.id)) {
       throw new Error('Ya existe otra cuenta con ese correo electrónico.')
+    }
+
+    const usedByClient = reservedEmails.some(
+      (value) => normalizeEmail(String(value ?? '')) === changes.email,
+    )
+    if (usedByClient) {
+      throw new Error('Ese correo ya está vinculado a una cuenta de cliente.')
     }
   }
 
