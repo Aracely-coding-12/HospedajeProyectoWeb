@@ -154,6 +154,10 @@ describe('criterios del panel principal', () => {
   tomorrow.setDate(tomorrow.getDate() + 1)
   const future = new Date(now)
   future.setDate(future.getDate() + 3)
+  const futureCheckOut = new Date(future)
+  futureCheckOut.setDate(futureCheckOut.getDate() + 1)
+  const tomorrowCheckOut = new Date(tomorrow)
+  tomorrowCheckOut.setDate(tomorrowCheckOut.getDate() + 1)
   const data = {
     rooms: [{ id: 'room-1' }, { id: 'room-2' }, { id: 'room-3' }],
     reservations: [
@@ -162,7 +166,7 @@ describe('criterios del panel principal', () => {
         status: 'confirmada',
         createdAt: `${todayKey}T10:00:00`,
         checkIn: toDateKey(future),
-        checkOut: toDateKey(new Date(future.getTime() + 86400000)),
+        checkOut: toDateKey(futureCheckOut),
         roomId: 'room-1',
         code: 'HES-0001',
         guestName: 'Ana Pérez',
@@ -195,7 +199,7 @@ describe('criterios del panel principal', () => {
         status: 'pendiente',
         createdAt: '2026-11-04T10:00:00',
         checkIn: toDateKey(tomorrow),
-        checkOut: toDateKey(new Date(tomorrow.getTime() + 86400000)),
+        checkOut: toDateKey(tomorrowCheckOut),
         roomId: 'room-3',
         code: 'HES-0004',
         guestName: 'Carlos Quispe',

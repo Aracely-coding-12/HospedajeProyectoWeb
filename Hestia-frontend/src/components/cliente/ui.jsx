@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import { useEffect, useId, useRef } from 'react'
 import { AlertIcon, CheckIcon, CloseIcon, SparklesIcon } from './icons.jsx'
 

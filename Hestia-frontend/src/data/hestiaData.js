@@ -1765,10 +1765,24 @@ export function updateClientStatusInData(data, clientId, active) {
   }
 }
 
-const SEQUENCE_CONFIG = {
-  reservation: { collection: 'reservations', idPrefix: 'reservation-', codePrefix: 'HES-' },
-  payment: { collection: 'payments', idPrefix: 'payment-', codePrefix: 'PAG-' },
-  promotion: { collection: 'promotions', idPrefix: 'promotion-', codePrefix: 'PROM-' },
+const SEQUENCE_CONFIG = new Map([
+  ['reservation', { collection: 'reservations', idPrefix: 'reservation-', codePrefix: 'HES-' }],
+  ['payment', { collection: 'payments', idPrefix: 'payment-', codePrefix: 'PAG-' }],
+  ['promotion', { collection: 'promotions', idPrefix: 'promotion-', codePrefix: 'PROM-' }],
+])
+
+function sequenceItems(data, collection) {
+  if (!data) return []
+  if (collection === 'reservations') {
+    return Array.isArray(data.reservations) ? data.reservations : []
+  }
+  if (collection === 'payments') {
+    return Array.isArray(data.payments) ? data.payments : []
+  }
+  if (collection === 'promotions') {
+    return Array.isArray(data.promotions) ? data.promotions : []
+  }
+  return []
 }
 
 function numericSuffix(value, prefix) {
@@ -1779,10 +1793,10 @@ function numericSuffix(value, prefix) {
 }
 
 export function nextSequence(kind, data) {
-  const config = SEQUENCE_CONFIG[kind]
+  const config = SEQUENCE_CONFIG.get(kind)
   if (!config) throw new Error('Tipo de secuencia no válido.')
 
-  const items = Array.isArray(data?.[config.collection]) ? data[config.collection] : []
+  const items = sequenceItems(data, config.collection)
   const highest = items.reduce(
     (current, item) =>
       Math.max(

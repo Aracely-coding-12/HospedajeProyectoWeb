@@ -15,6 +15,7 @@ import {
   EmptyState,
   inputClass,
   labelClass,
+  Notice,
   PageHeading,
   secondaryButtonClass,
 } from '../components/cliente/ui.jsx'
@@ -26,7 +27,13 @@ const STATUS_FILTERS = [
   { value: 'vencida', label: 'Vencidas' },
 ]
 
-function PromocionesCliente({ data, onUsePromotion, onCopyPromotion }) {
+function PromocionesCliente({
+  data,
+  notice,
+  onDismissNotice,
+  onUsePromotion,
+  onCopyPromotion,
+}) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('')
   const [status, setStatus] = useState('todas')
@@ -132,6 +139,14 @@ function PromocionesCliente({ data, onUsePromotion, onCopyPromotion }) {
       </section>
 
       <section className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {notice && (
+          <Notice
+            type={notice.type}
+            message={notice.message}
+            onClose={onDismissNotice}
+            className="mb-3"
+          />
+        )}
         <div className="rounded-xl border border-amber-400/30 bg-[#080705] p-3">
           <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_210px]">
             <div>

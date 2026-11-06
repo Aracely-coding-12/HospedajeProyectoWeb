@@ -58,25 +58,31 @@ function initials(name) {
     .join('')
 }
 
-async function copyText(value) {
+function copyText(value) {
   try {
-    await navigator.clipboard.writeText(value)
-    return true
+    return navigator.clipboard.writeText(value).then(
+      () => true,
+      () => copyTextFallback(value),
+    )
   } catch {
-    try {
-      const textarea = document.createElement('textarea')
-      textarea.value = value
-      textarea.setAttribute('readonly', '')
-      textarea.style.position = 'fixed'
-      textarea.style.opacity = '0'
-      document.body.appendChild(textarea)
-      textarea.select()
-      const copied = document.execCommand('copy')
-      textarea.remove()
-      return copied
-    } catch {
-      return false
-    }
+    return Promise.resolve(copyTextFallback(value))
+  }
+}
+
+function copyTextFallback(value) {
+  try {
+    const textarea = document.createElement('textarea')
+    textarea.value = value
+    textarea.setAttribute('readonly', '')
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    const copied = document.execCommand('copy')
+    textarea.remove()
+    return copied
+  } catch {
+    return false
   }
 }
 
@@ -749,14 +755,22 @@ function VistaPrincipalCliente({
     navigate('reserva', { promotionCode: promotion.code })
   }
 
-  async function handleCopyPromotion(promotion) {
-    const copied = await copyText(promotion.code)
-    setNotice({
-      type: copied ? 'success' : 'error',
-      message: copied
-        ? `Código ${promotion.code} copiado. Puedes usarlo al reservar.`
-        : `No se pudo copiar el código. Anota el código ${promotion.code}.`,
-    })
+  function handleCopyPromotion(promotion) {
+    copyText(promotion.code)
+      .then((copied) => {
+        setNotice({
+          type: copied ? 'success' : 'error',
+          message: copied
+            ? `Código ${promotion.code} copiado. Puedes usarlo al reservar.`
+            : `No se pudo copiar el código. Anota el código ${promotion.code}.`,
+        })
+      })
+      .catch(() => {
+        setNotice({
+          type: 'error',
+          message: `No se pudo copiar el código. Anota el código ${promotion.code}.`,
+        })
+      })
   }
 
   function requestLogout() {
@@ -821,6 +835,8 @@ function VistaPrincipalCliente({
     content = (
       <PromocionesCliente
         data={data}
+        notice={notice}
+        onDismissNotice={() => setNotice(null)}
         onUsePromotion={handleUsePromotion}
         onCopyPromotion={handleCopyPromotion}
       />
