@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Fallback para rutas del lado del cliente (SPA)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
