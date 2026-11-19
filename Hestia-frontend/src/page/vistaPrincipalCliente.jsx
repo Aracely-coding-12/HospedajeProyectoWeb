@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import hestiaEmblem from '../assets/hestia-emblem.png'
+import { ROOM_TYPES } from '../data/hestiaData.js'
 import { visiblePromotions, roomIsReservable } from '../lib/clientBooking.js'
 import { formatLongDate, formatSoles } from '../lib/format.js'
 import AccesoCliente from './accesoCliente.jsx'
@@ -441,7 +442,7 @@ function Landing({
               <div className="flex items-center gap-2">
                 <StarIcon className="h-4 w-4 text-amber-300" />
                 <span className="text-sm font-bold text-white">4.9</span>
-                <span className="text-[10px] text-stone-500">· 320 huéspedes</span>
+                <span className="text-[10px] text-stone-500">· {data.clients.length} huéspedes</span>
               </div>
               <p className="mt-0.5 text-[9px] uppercase tracking-wide text-stone-500">
                 Experiencias reales
@@ -463,7 +464,7 @@ function Landing({
         <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
             { label: 'Habitaciones', value: data.rooms.length, note: 'Para todos los estilos de viaje' },
-            { label: 'Tipos de habitación', value: 4, note: 'Simple, doble, matrimonial y suite' },
+            { label: 'Tipos de habitación', value: ROOM_TYPES.length, note: 'Simple, doble, matrimonial y suite' },
             { label: 'Atención', value: '24/7', note: 'Recepción y asistencia cercana' },
             { label: 'Promociones', value: promotions.length, note: 'Beneficios vigentes para huéspedes' },
           ].map((item) => (
