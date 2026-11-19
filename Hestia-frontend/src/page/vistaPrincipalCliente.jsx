@@ -414,7 +414,7 @@ function Landing({
             <div className="absolute -left-5 -top-5 h-24 w-24 rounded-full border border-amber-400/25 bg-amber-400/5" />
             <div className="relative overflow-hidden rounded-2xl border border-amber-400/50 bg-[#080705] shadow-[0_30px_90px_-24px_rgba(0,0,0,0.95)]">
               <img
-                src="/rooms/suite.svg"
+                src="/rooms/suite.jpg"
                 alt="Suite de Hestia Hospedaje"
                 className="h-[330px] w-full object-cover sm:h-[390px]"
               />

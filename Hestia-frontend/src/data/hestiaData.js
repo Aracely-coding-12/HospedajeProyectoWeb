@@ -68,10 +68,10 @@ export const CLIENT_SOURCE_OPTIONS = [
 ]
 
 export const DEFAULT_ROOM_IMAGES = {
-  Simple: '/rooms/simple.svg',
-  Doble: '/rooms/doble.svg',
-  Matrimonial: '/rooms/matrimonial.svg',
-  Suite: '/rooms/suite.svg',
+  Simple: '/rooms/simple.jpg',
+  Doble: '/rooms/doble.jpg',
+  Matrimonial: '/rooms/matrimonial.jpg',
+  Suite: '/rooms/suite.jpg',
 }
 
 const ROOM_DESCRIPTIONS = {
@@ -610,7 +610,7 @@ const promotions = [
     endDate: toDateKey(addDays(today, 20)),
     status: 'activa',
     visibleOnWeb: true,
-    image: '/rooms/suite.svg',
+    image: '/rooms/suite.jpg',
     createdAt: addDays(today, -12).toISOString(),
   },
   {
@@ -638,7 +638,7 @@ const promotions = [
     endDate: toDateKey(addDays(today, 30)),
     status: 'activa',
     visibleOnWeb: true,
-    image: '/rooms/matrimonial.svg',
+    image: '/rooms/matrimonial.jpg',
     createdAt: addDays(today, -22).toISOString(),
   },
   {
