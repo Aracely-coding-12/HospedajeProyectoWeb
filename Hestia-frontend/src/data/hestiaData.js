@@ -92,6 +92,22 @@ export function defaultRoomImage(type) {
   return DEFAULT_ROOM_IMAGE_BY_TYPE.get(type)
 }
 
+// Fotos adicionales por tipo para la galeria del detalle de habitacion
+// (la foto principal de cada habitacion sigue siendo room.image o
+// defaultRoomImage; esto son solo las vistas extra: bano, ventana, etc.)
+const ROOM_GALLERY_EXTRAS = {
+  Simple: ['/rooms/simple-2.jpg'],
+  Doble: ['/rooms/doble-2.jpg'],
+  Matrimonial: ['/rooms/matrimonial-2.jpg'],
+  Suite: ['/rooms/suite-2.jpg'],
+}
+
+export function roomGallery(room) {
+  const main = room.image || defaultRoomImage(room.type)
+  const extras = ROOM_GALLERY_EXTRAS[room.type] ?? []
+  return [main, ...extras].filter(Boolean)
+}
+
 export function roomDescription(type) {
   return ROOM_DESCRIPTION_BY_TYPE.get(type)
 }
