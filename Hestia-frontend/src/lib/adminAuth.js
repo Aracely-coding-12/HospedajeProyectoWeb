@@ -1,3 +1,5 @@
+import { apiRequest } from './apiClient.js'
+
 export const ADMINS_KEY = 'hestia_admins_v1'
 const DEFAULT_ADMIN_KEY = 'hestia_default_admin_v1'
 const PASSWORD_MIN_LENGTH = 12
@@ -242,6 +244,22 @@ export async function authenticate(email, password) {
   const normalizedEmail = normalizeEmail(email)
   if (!normalizedEmail || !password) return null
 
+  try {
+    const account = await apiRequest('/api/admin/login', {
+      method: 'POST',
+      body: { email: normalizedEmail, password },
+    })
+    // Deja en caché local el perfil real para que getAdminProfile (síncrono)
+    // tenga datos frescos sin tener que esperar otra ida y vuelta de red.
+    writeDefaultOverride({ ...readDefaultOverride(), profile: account })
+    return account
+  } catch (error) {
+    if (error.status === 401) return null
+    // El backend no respondió (sin red / Neon caído durante la demo): se
+    // cae al login local para no dejar al admin sin acceso.
+    console.warn('No se pudo validar con el backend, se usa el respaldo local:', error.message)
+  }
+
   const override = readDefaultOverride()
   const defaultAccount = defaultProfile(override)
 
@@ -326,6 +344,13 @@ export function updateAdminProfile(account, patch, reservedEmails = []) {
       profile: { ...(override.profile ?? {}), ...changes },
     }
     writeDefaultOverride(nextOverride)
+
+    apiRequest(`/api/admin/profile/${account.id}`, { method: 'PUT', body: changes }).catch(
+      (error) => {
+        console.warn('No se pudo sincronizar el perfil de administrador:', error.message)
+      },
+    )
+
     return getAdminProfile(account)
   }
 
@@ -364,6 +389,16 @@ export async function changeAdminPassword(account, currentPassword, newPassword)
       ...override,
       passwordHash: await hashPassword(newPassword),
     })
+
+    try {
+      await apiRequest(`/api/admin/change-password/${account.id}`, {
+        method: 'POST',
+        body: { currentPassword, newPassword },
+      })
+    } catch (error) {
+      console.warn('No se pudo sincronizar la contraseña con el backend:', error.message)
+    }
+
     return true
   }
 

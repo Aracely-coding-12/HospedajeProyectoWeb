@@ -1,4 +1,5 @@
 import { createInitialData } from '../data/hestiaData.js'
+import { apiRequest } from './apiClient.js'
 
 export const HESTIA_DATA_KEY = 'hestia_data_v1'
 export const HESTIA_NOTIFICATIONS_KEY = 'hestia_notifications_v1'
@@ -42,6 +43,33 @@ export function saveHestiaData(data) {
   } catch {
     // La aplicación sigue funcionando en memoria si el navegador bloquea el storage.
   }
+
+  // Persistencia real en Postgres (Neon): best-effort, no bloquea la UI si
+  // el backend está caído durante la demo (localStorage sigue como respaldo).
+  apiRequest('/api/data', { method: 'PUT', body: data }).catch((error) => {
+    console.warn('No se pudo sincronizar los datos con el backend:', error.message)
+  })
+}
+
+function hasAnyRecord(data) {
+  return DATA_COLLECTIONS.some((key) => data[key].length > 0)
+}
+
+// Se llama una vez al iniciar la app: trae el estado real desde el backend.
+// Si el backend aún no tiene nada (primera vez), devuelve null para que se
+// siga usando la semilla local (createInitialData) y esa semilla se suba
+// sola en el primer guardado.
+export async function syncHestiaDataFromServer() {
+  try {
+    const serverData = await apiRequest('/api/data')
+    if (!hasDataShape(serverData) || !hasAnyRecord(serverData)) return null
+
+    localStorage.setItem(HESTIA_DATA_KEY, JSON.stringify(serverData))
+    return serverData
+  } catch (error) {
+    console.warn('No se pudo leer el backend, se usa el respaldo local:', error.message)
+    return null
+  }
 }
 
 export function loadNotifications() {
@@ -68,6 +96,22 @@ export function saveNotifications(notifications) {
     localStorage.setItem(HESTIA_NOTIFICATIONS_KEY, serialized)
   } catch {
     // Las notificaciones se conservan en memoria durante la sesión.
+  }
+
+  apiRequest('/api/notifications', { method: 'PUT', body: notifications }).catch((error) => {
+    console.warn('No se pudo sincronizar las notificaciones con el backend:', error.message)
+  })
+}
+
+export async function syncNotificationsFromServer() {
+  try {
+    const serverNotifications = await apiRequest('/api/notifications')
+    if (!Array.isArray(serverNotifications)) return null
+
+    localStorage.setItem(HESTIA_NOTIFICATIONS_KEY, JSON.stringify(serverNotifications))
+    return serverNotifications
+  } catch {
+    return null
   }
 }
 
@@ -123,6 +167,22 @@ export function saveServiceRequests(requests) {
     localStorage.setItem(HESTIA_SERVICE_REQUESTS_KEY, serialized)
   } catch {
     // Las solicitudes se conservan en memoria durante la sesión.
+  }
+
+  apiRequest('/api/service-requests', { method: 'PUT', body: requests }).catch((error) => {
+    console.warn('No se pudo sincronizar las solicitudes con el backend:', error.message)
+  })
+}
+
+export async function syncServiceRequestsFromServer() {
+  try {
+    const serverRequests = await apiRequest('/api/service-requests')
+    if (!Array.isArray(serverRequests)) return null
+
+    localStorage.setItem(HESTIA_SERVICE_REQUESTS_KEY, JSON.stringify(serverRequests))
+    return serverRequests
+  } catch {
+    return null
   }
 }
 

@@ -28,6 +28,9 @@ import {
   saveHestiaData,
   saveNotifications,
   saveServiceRequests,
+  syncHestiaDataFromServer,
+  syncNotificationsFromServer,
+  syncServiceRequestsFromServer,
 } from './lib/hestiaStore.js'
 import { formatShortDate, formatSoles, todayKey } from './lib/format.js'
 import Admin from './page/admin.jsx'
@@ -60,6 +63,21 @@ function App() {
   useEffect(() => {
     saveHestiaData(data)
   }, [data])
+
+  // Trae el estado real desde el backend una vez al montar. Si el backend no
+  // tiene nada todavía (primera vez) o no responde, se sigue usando la
+  // semilla/cache local tal cual, que el efecto de arriba terminará subiendo.
+  useEffect(() => {
+    syncHestiaDataFromServer().then((serverData) => {
+      if (serverData) setData(serverData)
+    })
+    syncNotificationsFromServer().then((serverNotifications) => {
+      if (serverNotifications) setNotifications(serverNotifications)
+    })
+    syncServiceRequestsFromServer().then((serverRequests) => {
+      if (serverRequests) setServiceRequests(serverRequests)
+    })
+  }, [])
 
   useEffect(() => {
     saveNotifications(notifications)
@@ -191,7 +209,7 @@ function App() {
       active: record.active !== false,
     })
 
-    const account = updateClientAccount(activeClientSession.id, {
+    const account = await updateClientAccount(activeClientSession.id, {
       name,
       firstName: patch.firstName,
       lastName: patch.lastName,
