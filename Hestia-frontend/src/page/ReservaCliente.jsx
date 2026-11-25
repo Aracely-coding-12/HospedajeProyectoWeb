@@ -19,6 +19,7 @@ import {
   CalendarIcon,
   CheckIcon,
   CreditCardIcon,
+  MapPinIcon,
   TagIcon,
   UsersIcon,
 } from '../components/cliente/icons.jsx'
@@ -35,6 +36,7 @@ import {
   secondaryButtonClass,
   StatusBadge,
 } from '../components/cliente/ui.jsx'
+import TripPlanner from '../components/cliente/TripPlanner.jsx'
 
 function AuthRequired({ onRequireAuth }) {
   return (
@@ -64,7 +66,7 @@ function AuthRequired({ onRequireAuth }) {
   )
 }
 
-function ReservationCard({ reservation, onPay, onCancel }) {
+function ReservationCard({ reservation, onPay, onCancel, onViewPlan }) {
   const policy = reservationCancellationPolicy(reservation)
   const canCancel =
     policy.allowed &&
@@ -72,6 +74,7 @@ function ReservationCard({ reservation, onPay, onCancel }) {
   const canPay =
     !reservation.payment &&
     (reservation.status === 'pendiente' || reservation.status === 'confirmada')
+  const canViewPlan = reservation.status !== 'cancelada' && reservation.status !== 'rechazada'
 
   return (
     <article className="rounded-xl border border-amber-400/30 bg-[#080705] p-4">
@@ -141,11 +144,20 @@ function ReservationCard({ reservation, onPay, onCancel }) {
         </div>
       </dl>
 
-      {(canPay || canCancel || reservation.payment) && (
+      {(canPay || canCancel || canViewPlan || reservation.payment) && (
         <div className="mt-4 flex flex-wrap gap-2 border-t border-amber-400/10 pt-3">
           {canPay && (
             <button type="button" onClick={() => onPay(reservation)} className={primaryButtonClass}>
               <CreditCardIcon className="h-4 w-4" /> Pagar ahora
+            </button>
+          )}
+          {canViewPlan && (
+            <button
+              type="button"
+              onClick={() => onViewPlan(reservation)}
+              className={secondaryButtonClass}
+            >
+              <MapPinIcon className="h-4 w-4" /> Ver mi plan en Cusco
             </button>
           )}
           {reservation.payment && (
@@ -210,6 +222,7 @@ function ReservaCliente({
   const [cancelTarget, setCancelTarget] = useState(null)
   const [cancelError, setCancelError] = useState('')
   const [cancelling, setCancelling] = useState(false)
+  const [planTarget, setPlanTarget] = useState(null)
 
   if (!session) {
     return (
@@ -686,6 +699,7 @@ function ReservaCliente({
                     reservation={reservation}
                     onPay={() => onGoToPayment(reservation.id)}
                     onCancel={setCancelTarget}
+                    onViewPlan={setPlanTarget}
                   />
                 ))}
               </div>
@@ -745,6 +759,22 @@ function ReservaCliente({
             )}
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={Boolean(planTarget)}
+        onClose={() => setPlanTarget(null)}
+        title="Tu plan en Cusco"
+        description={
+          planTarget
+            ? `${planTarget.code} · ${formatShortDate(planTarget.checkIn)} al ${formatShortDate(
+                planTarget.checkOut,
+              )}`
+            : ''
+        }
+        size="xl"
+      >
+        {planTarget && <TripPlanner reservation={planTarget} />}
       </Modal>
     </>
   )
