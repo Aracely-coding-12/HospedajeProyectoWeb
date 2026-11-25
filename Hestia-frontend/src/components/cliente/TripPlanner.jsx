@@ -266,13 +266,13 @@ function TripPlanner({ reservation, onSavePlan }) {
       version: 1,
       days: [...otherDays, { day: day.day, poiIds: draft }].sort((a, b) => a.day - b.day),
     }
-    persist(nextPlan, `Ruta del día ${day.day} guardada en tu reserva.`)
+    void persist(nextPlan, `Ruta del día ${day.day} guardada en tu reserva.`)
   }
 
   function restoreSuggested() {
     if (!plan) return
     const nextDays = plan.days.filter((item) => item.day !== day.day)
-    persist(nextDays.length ? { ...plan, days: nextDays } : null, `Día ${day.day}: volviste a la ruta sugerida.`)
+    void persist(nextDays.length ? { ...plan, days: nextDays } : null, `Día ${day.day}: volviste a la ruta sugerida.`)
   }
 
   return (
