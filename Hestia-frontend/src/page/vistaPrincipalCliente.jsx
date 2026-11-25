@@ -688,6 +688,7 @@ function VistaPrincipalCliente({
   onLogout,
   onCreateReservation,
   onCancelReservation,
+  onSaveTripPlan,
   onCreatePayment,
   onUpdateProfile,
   onChangePassword,
@@ -804,6 +805,7 @@ function VistaPrincipalCliente({
         }
         onCreateReservation={onCreateReservation}
         onCancelReservation={onCancelReservation}
+        onSaveTripPlan={onSaveTripPlan}
         onGoToPayment={(reservationId) => navigate('pago', { reservationId })}
         onRequireAuth={(mode = 'login') => openAuth(mode)}
       />

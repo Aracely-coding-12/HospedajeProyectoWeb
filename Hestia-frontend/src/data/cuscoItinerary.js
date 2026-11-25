@@ -1,3 +1,14 @@
+// Punto de partida y llegada de cada día. Ubicación referencial en San Blas:
+// reemplazar por la dirección real del hospedaje.
+export const HOTEL = {
+  id: 'hestia',
+  name: 'Hospedaje Hestia',
+  lat: -13.5153,
+  lng: -71.9752,
+  category: 'Tu hospedaje',
+  image: null,
+}
+
 const POIS = {
   plazaArmas: {
     id: 'plaza-armas',
@@ -129,6 +140,15 @@ const POIS = {
   },
 }
 
+// Catálogo para el editor de ruta: el huésped puede sumar cualquiera de estos.
+export const POI_CATALOG = Object.values(POIS)
+
+const POIS_BY_ID = new Map(POI_CATALOG.map((poi) => [poi.id, poi]))
+
+export function poiById(id) {
+  return POIS_BY_ID.get(id) ?? null
+}
+
 const DAY_TEMPLATES = [
   {
     day: 1,
@@ -213,7 +233,22 @@ export function travelerTypeFromGuests(guests) {
   return 'familia'
 }
 
-export function buildCuscoItinerary({ nights, guests }) {
+// Ruta guardada por el huésped: { version: 1, days: [{ day, poiIds: [...] }] }.
+// Se guarda en la reserva (reservation.tripPlan) y llega a Postgres como jsonb.
+export function planFromItinerary(itinerary) {
+  return {
+    version: 1,
+    days: itinerary.days.map((day) => ({ day: day.day, poiIds: day.pois.map((poi) => poi.id) })),
+  }
+}
+
+function customPoisForDay(plan, dayNumber) {
+  const saved = plan?.days?.find((item) => item.day === dayNumber)
+  if (!saved || !Array.isArray(saved.poiIds)) return null
+  return saved.poiIds.map(poiById).filter(Boolean)
+}
+
+export function buildCuscoItinerary({ nights, guests, plan = null }) {
   const travelerType = travelerTypeFromGuests(guests)
   const profile = TRAVELER_PROFILES[travelerType]
   const dayCount = Math.min(Math.max(Number(nights) || 1, 1), DAY_TEMPLATES.length)
@@ -221,9 +256,10 @@ export function buildCuscoItinerary({ nights, guests }) {
   const seenPois = new Map()
   const days = DAY_TEMPLATES.slice(0, dayCount).map((template) => {
     const extra = profile.extras[template.day]
-    const pois = template.pois.map((key) => POIS[key])
+    const custom = customPoisForDay(plan, template.day)
+    const pois = custom ?? template.pois.map((key) => POIS[key])
 
-    if (extra?.poiKey && !template.pois.includes(extra.poiKey)) {
+    if (!custom && extra?.poiKey && !template.pois.includes(extra.poiKey)) {
       pois.push(POIS[extra.poiKey])
     }
 
@@ -234,6 +270,7 @@ export function buildCuscoItinerary({ nights, guests }) {
       title: template.title,
       description: template.description,
       tip: extra?.tip ?? null,
+      custom: Boolean(custom),
       pois,
     }
   })

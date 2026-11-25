@@ -46,6 +46,8 @@ const RESERVATION_COLUMNS = [
   { key: 'total', sql: 'total' },
   { key: 'guests', sql: 'guests' },
   { key: 'promotionCode', sql: 'promotion_code' },
+  // Ruta personalizada del huésped en Cusco: { version, days: [{ day, poiIds }] }.
+  { key: 'tripPlan', sql: 'trip_plan' },
   { key: 'createdAt', sql: 'created_at' },
   { key: 'updatedAt', sql: 'updated_at' },
 ]

@@ -47,6 +47,10 @@ CREATE TABLE IF NOT EXISTS reservations (
   updated_at timestamptz
 );
 
+-- Ruta personalizada del huésped (planificador de Cusco). ALTER aparte para
+-- que `npm run migrate` también la agregue en bases ya creadas.
+ALTER TABLE reservations ADD COLUMN IF NOT EXISTS trip_plan jsonb;
+
 CREATE TABLE IF NOT EXISTS payments (
   id text PRIMARY KEY,
   code text UNIQUE NOT NULL,

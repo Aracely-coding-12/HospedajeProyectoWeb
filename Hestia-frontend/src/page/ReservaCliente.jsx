@@ -196,6 +196,7 @@ function ReservaCliente({
   initialTab = 'nueva',
   onCreateReservation,
   onCancelReservation,
+  onSaveTripPlan,
   onGoToPayment,
   onRequireAuth,
 }) {
@@ -774,7 +775,7 @@ function ReservaCliente({
         }
         size="xl"
       >
-        {planTarget && <TripPlanner reservation={planTarget} />}
+        {planTarget && <TripPlanner reservation={planTarget} onSavePlan={onSaveTripPlan} />}
       </Modal>
     </>
   )
