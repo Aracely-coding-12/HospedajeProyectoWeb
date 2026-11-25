@@ -92,6 +92,22 @@ export function defaultRoomImage(type) {
   return DEFAULT_ROOM_IMAGE_BY_TYPE.get(type)
 }
 
+// Mismo modelo 3D compartido por todos los tipos por ahora (prototipo de la
+// feria); cuando haya tiempo se puede dar un modelo propio por tipo igual
+// que con las fotos.
+const DEFAULT_ROOM_MODELS = {
+  Simple: '/models/habitacion.glb',
+  Doble: '/models/habitacion.glb',
+  Matrimonial: '/models/habitacion.glb',
+  Suite: '/models/habitacion.glb',
+}
+
+const DEFAULT_ROOM_MODEL_BY_TYPE = new Map(Object.entries(DEFAULT_ROOM_MODELS))
+
+export function defaultRoomModel(type) {
+  return DEFAULT_ROOM_MODEL_BY_TYPE.get(type)
+}
+
 // Fotos adicionales por tipo para la galeria del detalle de habitacion
 // (la foto principal de cada habitacion sigue siendo room.image o
 // defaultRoomImage; esto son solo las vistas extra: bano, ventana, etc.)

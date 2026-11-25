@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   ROOM_TYPES,
   defaultRoomImage,
+  defaultRoomModel,
   roomDescription,
   roomGallery,
   roomStatusLabel,
@@ -9,6 +10,7 @@ import {
 import { roomIsReservable } from '../lib/clientBooking.js'
 import { formatSoles } from '../lib/format.js'
 import { RoomCard } from '../components/cliente/cards.jsx'
+import Room3DViewer from '../components/cliente/Room3DViewer.jsx'
 import {
   BedIcon,
   CheckIcon,
@@ -46,27 +48,59 @@ const SORT_OPTIONS = [
 
 function RoomGallery({ room, badge }) {
   const images = roomGallery(room)
+  const model3d = defaultRoomModel(room.type)
+  const [view, setView] = useState('fotos')
   const [active, setActive] = useState(0)
   const current = images[active] ?? images[0]
 
   return (
     <div>
-      <div className="relative overflow-hidden rounded-xl border border-amber-400/30">
-        <img
-          src={current}
-          alt={`Habitación ${room.number} · foto ${active + 1}`}
-          onError={(event) => {
-            const fallback = defaultRoomImage(room.type)
-            if (!fallback || event.currentTarget.getAttribute('src') === fallback) return
-            event.currentTarget.onerror = null
-            event.currentTarget.src = fallback
-          }}
-          className="h-64 w-full object-cover sm:h-80"
-        />
-        <span className="absolute right-3 top-3">{badge}</span>
-      </div>
+      {model3d && (
+        <div className="mb-2 flex gap-1.5">
+          {[
+            { id: 'fotos', label: 'Fotos' },
+            { id: '3d', label: 'Vista 3D' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setView(tab.id)}
+              aria-current={view === tab.id}
+              className={`rounded-md px-3 py-1 text-[11px] font-medium transition ${
+                view === tab.id
+                  ? 'bg-amber-400/15 text-amber-200'
+                  : 'text-stone-500 hover:text-stone-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {images.length > 1 && (
+      {view === '3d' && model3d ? (
+        <div className="relative">
+          <Room3DViewer room={room} modelSrc={model3d} />
+          <span className="absolute right-3 top-3">{badge}</span>
+        </div>
+      ) : (
+        <div className="relative overflow-hidden rounded-xl border border-amber-400/30">
+          <img
+            src={current}
+            alt={`Habitación ${room.number} · foto ${active + 1}`}
+            onError={(event) => {
+              const fallback = defaultRoomImage(room.type)
+              if (!fallback || event.currentTarget.getAttribute('src') === fallback) return
+              event.currentTarget.onerror = null
+              event.currentTarget.src = fallback
+            }}
+            className="h-64 w-full object-cover sm:h-80"
+          />
+          <span className="absolute right-3 top-3">{badge}</span>
+        </div>
+      )}
+
+      {view === 'fotos' && images.length > 1 && (
         <div className="mt-2 flex gap-2">
           {images.map((image, index) => (
             <button
