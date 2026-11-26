@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { defaultRoomModelCredit } from '../../data/hestiaData.js'
 import { CrosshairIcon, SmartphoneIcon } from './icons.jsx'
 
 let modelViewerReady = null
@@ -83,8 +84,7 @@ function Room3DViewer({ room, modelSrc }) {
       )}
       <div className="flex items-center justify-between gap-2 px-3 py-2">
         <p className="text-[10px] leading-4 text-stone-500">
-          Modelo referencial para mostrar la distribución del espacio · "Bedroom" por Poly by
-          Google (CC BY 3.0)
+          Modelo referencial para mostrar la distribución del espacio · {defaultRoomModelCredit(room.type)}
         </p>
         <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-medium text-amber-300">
           <SmartphoneIcon className="h-3 w-3" /> Toca el ícono AR para verla en tu espacio
