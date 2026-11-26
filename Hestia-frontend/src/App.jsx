@@ -264,6 +264,27 @@ function App() {
     return { ...reservation, room }
   }
 
+  // Guarda la ruta personalizada del huésped dentro de su reserva
+  // (reservation.tripPlan → columna jsonb trip_plan en Postgres).
+  async function handleSaveTripPlan(reservationId, tripPlan) {
+    requireActiveClient()
+    const target = data.reservations.find((reservation) => reservation.id === reservationId)
+
+    if (!target || target.clientId !== activeClientSession.id) {
+      throw new Error('La reserva seleccionada no pertenece a tu cuenta.')
+    }
+
+    const nextData = {
+      ...data,
+      reservations: data.reservations.map((reservation) =>
+        reservation.id === reservationId
+          ? { ...reservation, tripPlan, updatedAt: new Date().toISOString() }
+          : reservation,
+      ),
+    }
+    setData(nextData)
+  }
+
   async function handleCancelClientReservation(reservationId) {
     const record = requireActiveClient()
     const target = data.reservations.find(
@@ -414,6 +435,7 @@ function App() {
       onLogout={handleClientLogout}
       onCreateReservation={handleCreateReservation}
       onCancelReservation={handleCancelClientReservation}
+      onSaveTripPlan={handleSaveTripPlan}
       onCreatePayment={handleCreateClientPayment}
       onUpdateProfile={handleUpdateClientProfile}
       onChangePassword={handleChangeClientPassword}

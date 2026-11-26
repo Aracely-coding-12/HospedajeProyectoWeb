@@ -30,7 +30,7 @@ function CuscoMap({ days, activeIndex }) {
       scrollWheelZoom: false,
     })
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; colaboradores de OpenStreetMap',
       maxZoom: 18,
     }).addTo(map)
