@@ -68,10 +68,10 @@ export const CLIENT_SOURCE_OPTIONS = [
 ]
 
 export const DEFAULT_ROOM_IMAGES = {
-  Simple: '/rooms/simple.svg',
-  Doble: '/rooms/doble.svg',
-  Matrimonial: '/rooms/matrimonial.svg',
-  Suite: '/rooms/suite.svg',
+  Simple: '/rooms/simple.jpg',
+  Doble: '/rooms/doble.jpg',
+  Matrimonial: '/rooms/matrimonial.jpg',
+  Suite: '/rooms/suite.jpg',
 }
 
 const ROOM_DESCRIPTIONS = {
@@ -90,6 +90,38 @@ const ROOM_DESCRIPTION_BY_TYPE = new Map(Object.entries(ROOM_DESCRIPTIONS))
 
 export function defaultRoomImage(type) {
   return DEFAULT_ROOM_IMAGE_BY_TYPE.get(type)
+}
+
+// Mismo modelo 3D compartido por todos los tipos por ahora (prototipo de la
+// feria); cuando haya tiempo se puede dar un modelo propio por tipo igual
+// que con las fotos.
+const DEFAULT_ROOM_MODELS = {
+  Simple: '/models/habitacion.glb',
+  Doble: '/models/habitacion.glb',
+  Matrimonial: '/models/habitacion.glb',
+  Suite: '/models/habitacion.glb',
+}
+
+const DEFAULT_ROOM_MODEL_BY_TYPE = new Map(Object.entries(DEFAULT_ROOM_MODELS))
+
+export function defaultRoomModel(type) {
+  return DEFAULT_ROOM_MODEL_BY_TYPE.get(type)
+}
+
+// Fotos adicionales por tipo para la galeria del detalle de habitacion
+// (la foto principal de cada habitacion sigue siendo room.image o
+// defaultRoomImage; esto son solo las vistas extra: bano, ventana, etc.)
+const ROOM_GALLERY_EXTRAS = {
+  Simple: ['/rooms/simple-2.jpg'],
+  Doble: ['/rooms/doble-2.jpg'],
+  Matrimonial: ['/rooms/matrimonial-2.jpg'],
+  Suite: ['/rooms/suite-2.jpg'],
+}
+
+export function roomGallery(room) {
+  const main = room.image || defaultRoomImage(room.type)
+  const extras = ROOM_GALLERY_EXTRAS[room.type] ?? []
+  return [main, ...extras].filter(Boolean)
 }
 
 export function roomDescription(type) {
@@ -610,7 +642,7 @@ const promotions = [
     endDate: toDateKey(addDays(today, 20)),
     status: 'activa',
     visibleOnWeb: true,
-    image: '/rooms/suite.svg',
+    image: '/rooms/suite.jpg',
     createdAt: addDays(today, -12).toISOString(),
   },
   {
@@ -638,7 +670,7 @@ const promotions = [
     endDate: toDateKey(addDays(today, 30)),
     status: 'activa',
     visibleOnWeb: true,
-    image: '/rooms/matrimonial.svg',
+    image: '/rooms/matrimonial.jpg',
     createdAt: addDays(today, -22).toISOString(),
   },
   {

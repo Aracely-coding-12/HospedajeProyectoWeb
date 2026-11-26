@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   PAYMENT_METHOD_OPTIONS,
+  defaultRoomImage,
   paymentMethodLabel,
   paymentStatusLabel,
   reservationStatusLabel,
@@ -401,6 +402,15 @@ function PagoCliente({
             </form>
 
             <aside className="rounded-xl border border-amber-400/40 bg-[#080705] p-5 xl:sticky xl:top-20">
+              {selected?.room && (
+                <div className="-mx-5 -mt-5 mb-4 h-28 overflow-hidden rounded-t-xl border-b border-amber-400/20">
+                  <img
+                    src={selected.room.image || defaultRoomImage(selected.room.type)}
+                    alt={`Habitación ${selected.room.number} · ${selected.room.type}`}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              )}
               <h2 className="text-base font-semibold text-white">Resumen a pagar</h2>
               {selected ? (
                 <div className="mt-4 space-y-3 text-sm">

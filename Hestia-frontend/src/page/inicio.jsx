@@ -1,4 +1,6 @@
 import { formatLongDate, formatShortDate, formatSoles } from '../lib/format.js'
+import { reservationStatusLabel } from '../data/hestiaData.js'
+import { StatusBadge } from '../components/cliente/ui.jsx'
 
 const datePartsFormatter = new Intl.DateTimeFormat('es-PE', { day: '2-digit', month: 'short' })
 
@@ -32,22 +34,6 @@ function StatCard({ label, value, note }) {
   )
 }
 
-function StatusBadge({ status }) {
-  const pending = status === 'pendiente'
-
-  return (
-    <span
-      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
-        pending
-          ? 'border-stone-500/60 bg-stone-500/10 text-stone-300'
-          : 'border-amber-400/50 bg-amber-400/10 text-amber-200'
-      }`}
-    >
-      {status === 'pendiente' ? 'Pendiente' : 'Confirmada'}
-    </span>
-  )
-}
-
 function ReservationRow({ reservation, showCreatedAt = false }) {
   const { day, month } = dateParts(reservation.checkIn)
 
@@ -73,7 +59,7 @@ function ReservationRow({ reservation, showCreatedAt = false }) {
 
       <div className="flex shrink-0 flex-col items-end gap-1">
         <span className="text-sm font-semibold text-amber-200">{formatSoles(reservation.total)}</span>
-        <StatusBadge status={reservation.status} />
+        <StatusBadge status={reservation.status} label={reservationStatusLabel(reservation.status)} />
       </div>
     </li>
   )

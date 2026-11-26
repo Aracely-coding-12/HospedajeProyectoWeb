@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import hestiaEmblem from '../assets/hestia-emblem.png'
+import { ROOM_TYPES } from '../data/hestiaData.js'
 import { visiblePromotions, roomIsReservable } from '../lib/clientBooking.js'
 import { formatLongDate, formatSoles } from '../lib/format.js'
 import AccesoCliente from './accesoCliente.jsx'
@@ -9,6 +10,7 @@ import ReservaCliente from './ReservaCliente.jsx'
 import ServicisCliente from './ServicisCliente.jsx'
 import PerfilCliente from './perfilCliente.jsx'
 import PromocionesCliente from './promocionesCliente.jsx'
+import TripPlanCliente from './TripPlanCliente.jsx'
 import { PromotionCard, RoomCard, ServiceCard } from '../components/cliente/cards.jsx'
 import {
   ArrowRightIcon,
@@ -414,7 +416,7 @@ function Landing({
             <div className="absolute -left-5 -top-5 h-24 w-24 rounded-full border border-amber-400/25 bg-amber-400/5" />
             <div className="relative overflow-hidden rounded-2xl border border-amber-400/50 bg-[#080705] shadow-[0_30px_90px_-24px_rgba(0,0,0,0.95)]">
               <img
-                src="/rooms/suite.svg"
+                src="/rooms/suite.jpg"
                 alt="Suite de Hestia Hospedaje"
                 className="h-[330px] w-full object-cover sm:h-[390px]"
               />
@@ -441,7 +443,7 @@ function Landing({
               <div className="flex items-center gap-2">
                 <StarIcon className="h-4 w-4 text-amber-300" />
                 <span className="text-sm font-bold text-white">4.9</span>
-                <span className="text-[10px] text-stone-500">· 320 huéspedes</span>
+                <span className="text-[10px] text-stone-500">· {data.clients.length} huéspedes</span>
               </div>
               <p className="mt-0.5 text-[9px] uppercase tracking-wide text-stone-500">
                 Experiencias reales
@@ -463,7 +465,7 @@ function Landing({
         <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
             { label: 'Habitaciones', value: data.rooms.length, note: 'Para todos los estilos de viaje' },
-            { label: 'Tipos de habitación', value: 4, note: 'Simple, doble, matrimonial y suite' },
+            { label: 'Tipos de habitación', value: ROOM_TYPES.length, note: 'Simple, doble, matrimonial y suite' },
             { label: 'Atención', value: '24/7', note: 'Recepción y asistencia cercana' },
             { label: 'Promociones', value: promotions.length, note: 'Beneficios vigentes para huéspedes' },
           ].map((item) => (
@@ -687,6 +689,7 @@ function VistaPrincipalCliente({
   onLogout,
   onCreateReservation,
   onCancelReservation,
+  onSaveTripPlan,
   onCreatePayment,
   onUpdateProfile,
   onChangePassword,
@@ -803,8 +806,20 @@ function VistaPrincipalCliente({
         }
         onCreateReservation={onCreateReservation}
         onCancelReservation={onCancelReservation}
+        onViewPlan={(reservationId) => navigate('plan', { reservationId })}
         onGoToPayment={(reservationId) => navigate('pago', { reservationId })}
         onRequireAuth={(mode = 'login') => openAuth(mode)}
+      />
+    )
+  } else if (view === 'plan') {
+    content = (
+      <TripPlanCliente
+        key={`plan-${bookingDraft.reservationId ?? ''}`}
+        session={session}
+        data={data}
+        reservationId={bookingDraft.reservationId}
+        onSavePlan={onSaveTripPlan}
+        onBack={() => navigate('reserva')}
       />
     )
   } else if (view === 'pago') {

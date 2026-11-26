@@ -1,1 +1,111 @@
 @import 'tailwindcss';
+/* Mapa 3D de la ruta del huésped (CuscoMap3D): marcadores HTML de MapLibre. */
+.hestia-stop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: #f59e0b;
+  color: #1c1203;
+  font: 700 12px/1 sans-serif;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6), 0 6px 14px rgba(0, 0, 0, 0.45);
+}
+
+.hestia-stop--hotel {
+  background: #0b0a07;
+  color: #fbbf24;
+  box-shadow: 0 0 0 2px #fbbf24, 0 6px 14px rgba(0, 0, 0, 0.45);
+}
+
+/* "Personita" que recorre la ruta: un halo pulsante debajo + la figura
+   (sombra de contacto, cuerpo con degradado, cabeza con brillo) encima.
+   MapLibre rota este contenedor completo con setRotation(), así que la
+   figura siempre mira hacia donde camina. */
+.hestia-traveler {
+  position: relative;
+  width: 30px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hestia-traveler__glow {
+  position: absolute;
+  inset: 34% 20% 10%;
+  border-radius: 9999px;
+  background: rgba(245, 158, 11, 0.32);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.28);
+  animation: hestia-pulse 1.6s ease-in-out infinite;
+}
+
+.hestia-traveler__figure {
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.55));
+}
+
+.hestia-traveler__shadow {
+  fill: rgba(0, 0, 0, 0.4);
+}
+
+.hestia-traveler__body {
+  fill: url(#hestia-traveler-body);
+  stroke: #7c3d06;
+  stroke-width: 1;
+}
+
+.hestia-traveler__head {
+  fill: url(#hestia-traveler-head);
+  stroke: #7c3d06;
+  stroke-width: 1;
+}
+
+@keyframes hestia-pulse {
+  50% {
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.3), 0 0 0 10px rgba(245, 158, 11, 0.05);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hestia-traveler__glow {
+    animation: none;
+  }
+}
+
+/* Postal con la foto de la parada activa durante "Reproducir mi día". */
+@keyframes hestia-fade {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Globo de diálogo con el dato curioso de la parada: entra con un "pop". */
+@keyframes hestia-bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes hestia-bubble-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.9);
+  }
+}

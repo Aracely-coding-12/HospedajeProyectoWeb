@@ -2,12 +2,15 @@ import { useState } from 'react'
 import {
   ROOM_TYPES,
   defaultRoomImage,
+  defaultRoomModel,
   roomDescription,
+  roomGallery,
   roomStatusLabel,
 } from '../data/hestiaData.js'
 import { roomIsReservable } from '../lib/clientBooking.js'
 import { formatSoles } from '../lib/format.js'
 import { RoomCard } from '../components/cliente/cards.jsx'
+import Room3DViewer from '../components/cliente/Room3DViewer.jsx'
 import {
   BedIcon,
   CheckIcon,
@@ -42,6 +45,84 @@ const SORT_OPTIONS = [
   { value: 'price-desc', label: 'Mayor precio' },
   { value: 'number', label: 'Número de habitación' },
 ]
+
+function RoomGallery({ room, badge }) {
+  const images = roomGallery(room)
+  const model3d = defaultRoomModel(room.type)
+  const [view, setView] = useState('fotos')
+  const [active, setActive] = useState(0)
+  const current = images[active] ?? images[0]
+
+  return (
+    <div>
+      {model3d && (
+        <div className="mb-2 flex gap-1.5">
+          {[
+            { id: 'fotos', label: 'Fotos' },
+            { id: '3d', label: 'Vista 3D' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setView(tab.id)}
+              aria-current={view === tab.id}
+              className={`rounded-md px-3 py-1 text-[11px] font-medium transition ${
+                view === tab.id
+                  ? 'bg-amber-400/15 text-amber-200'
+                  : 'text-stone-500 hover:text-stone-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {view === '3d' && model3d ? (
+        <div className="relative">
+          <Room3DViewer room={room} modelSrc={model3d} />
+          <span className="absolute right-3 top-3">{badge}</span>
+        </div>
+      ) : (
+        <div className="relative overflow-hidden rounded-xl border border-amber-400/30">
+          <img
+            src={current}
+            alt={`Habitación ${room.number} · foto ${active + 1}`}
+            onError={(event) => {
+              const fallback = defaultRoomImage(room.type)
+              if (!fallback || event.currentTarget.getAttribute('src') === fallback) return
+              event.currentTarget.onerror = null
+              event.currentTarget.src = fallback
+            }}
+            className="h-64 w-full object-cover sm:h-80"
+          />
+          <span className="absolute right-3 top-3">{badge}</span>
+        </div>
+      )}
+
+      {view === 'fotos' && images.length > 1 && (
+        <div className="mt-2 flex gap-2">
+          {images.map((image, index) => (
+            <button
+              key={image}
+              type="button"
+              onClick={() => setActive(index)}
+              aria-label={`Ver foto ${index + 1}`}
+              aria-current={index === active}
+              className={`h-14 w-20 shrink-0 overflow-hidden rounded-lg border transition ${
+                index === active
+                  ? 'border-amber-300'
+                  : 'border-amber-400/20 opacity-70 hover:opacity-100'
+              }`}
+            >
+              <img src={image} alt="" className="h-full w-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function HabitacionCliente({ data, onReserveRoom }) {
   const [query, setQuery] = useState('')
@@ -283,25 +364,16 @@ function HabitacionCliente({ data, onReserveRoom }) {
       >
         {selectedRoom && (
           <div>
-            <div className="relative overflow-hidden rounded-xl border border-amber-400/30">
-              <img
-                src={selectedRoom.image || defaultRoomImage(selectedRoom.type)}
-                alt={`Habitación ${selectedRoom.number}`}
-                onError={(event) => {
-                  const fallback = defaultRoomImage(selectedRoom.type)
-                  if (!fallback || event.currentTarget.getAttribute('src') === fallback) return
-                  event.currentTarget.onerror = null
-                  event.currentTarget.src = fallback
-                }}
-                className="h-64 w-full object-cover sm:h-80"
-              />
-              <span className="absolute right-3 top-3">
+            <RoomGallery
+              key={selectedRoom.id}
+              room={selectedRoom}
+              badge={
                 <StatusBadge
                   status={selectedRoom.status}
                   label={roomStatusLabel(selectedRoom.status)}
                 />
-              </span>
-            </div>
+              }
+            />
 
             <div className="mt-5 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-start">
               <div>
