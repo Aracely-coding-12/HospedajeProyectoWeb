@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Clock,
   Coffee,
+  Crosshair,
   CreditCard,
   Download,
   Eye,
@@ -66,6 +67,7 @@ export const ClockIcon = wrap(Clock)
 export const CloseIcon = wrap(X)
 export const CoffeeIcon = wrap(Coffee)
 export const CreditCardIcon = wrap(CreditCard)
+export const CrosshairIcon = wrap(Crosshair)
 export const DownloadIcon = wrap(Download)
 export const EyeIcon = wrap(Eye)
 export const EyeOffIcon = wrap(EyeOff)
