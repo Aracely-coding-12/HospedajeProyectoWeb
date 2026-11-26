@@ -111,8 +111,8 @@ export function defaultRoomModel(type) {
 const DEFAULT_ROOM_MODEL_CREDITS = {
   Simple: '"Bedroom" por Poly by Google (CC BY 3.0)',
   Doble: '"A Bedroom" por Neil M · monkeymad2 (CC BY 3.0)',
-  Matrimonial: '"Apartment" por Poly by Google (CC BY 3.0)',
-  Suite: '"Apartment" por Nathaniel Chen (CC BY 3.0)',
+  Matrimonial: '"Bedroom" por Alex Safayan (CC BY 3.0)',
+  Suite: '"Bedroom" por Khor Chin Heong (CC BY 3.0)',
 }
 
 const DEFAULT_ROOM_MODEL_CREDIT_BY_TYPE = new Map(Object.entries(DEFAULT_ROOM_MODEL_CREDITS))

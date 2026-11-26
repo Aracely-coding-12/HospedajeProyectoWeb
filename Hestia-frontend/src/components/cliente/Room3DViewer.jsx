@@ -65,6 +65,10 @@ function Room3DViewer({ room, modelSrc }) {
               width: '100%',
               height: '18rem',
               backgroundColor: '#0b0a07',
+              // El modal donde vive este visor es scrolleable: sin esto, al
+              // pellizcar para hacer zoom en el modelo, el navegador movía el
+              // scroll del modal en vez de acercar la cámara 3D.
+              touchAction: 'none',
             }}
           />
           <button
