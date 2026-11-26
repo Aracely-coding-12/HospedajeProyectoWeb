@@ -92,20 +92,33 @@ export function defaultRoomImage(type) {
   return DEFAULT_ROOM_IMAGE_BY_TYPE.get(type)
 }
 
-// Mismo modelo 3D compartido por todos los tipos por ahora (prototipo de la
-// feria); cuando haya tiempo se puede dar un modelo propio por tipo igual
-// que con las fotos.
+// Un modelo 3D por tipo (todos CC-BY 3.0 de poly.pizza, reescalados a metros
+// reales para que la vista AR quede a tamaño de habitación de verdad).
 const DEFAULT_ROOM_MODELS = {
   Simple: '/models/habitacion.glb',
-  Doble: '/models/habitacion.glb',
-  Matrimonial: '/models/habitacion.glb',
-  Suite: '/models/habitacion.glb',
+  Doble: '/models/habitacion-doble.glb',
+  Matrimonial: '/models/habitacion-matrimonial.glb',
+  Suite: '/models/habitacion-suite.glb',
 }
 
 const DEFAULT_ROOM_MODEL_BY_TYPE = new Map(Object.entries(DEFAULT_ROOM_MODELS))
 
 export function defaultRoomModel(type) {
   return DEFAULT_ROOM_MODEL_BY_TYPE.get(type)
+}
+
+// Crédito del modelo 3D de cada tipo (todos poly.pizza, CC BY 3.0).
+const DEFAULT_ROOM_MODEL_CREDITS = {
+  Simple: '"Bedroom" por Poly by Google (CC BY 3.0)',
+  Doble: '"A Bedroom" por Neil M · monkeymad2 (CC BY 3.0)',
+  Matrimonial: '"Apartment" por Poly by Google (CC BY 3.0)',
+  Suite: '"Apartment" por Nathaniel Chen (CC BY 3.0)',
+}
+
+const DEFAULT_ROOM_MODEL_CREDIT_BY_TYPE = new Map(Object.entries(DEFAULT_ROOM_MODEL_CREDITS))
+
+export function defaultRoomModelCredit(type) {
+  return DEFAULT_ROOM_MODEL_CREDIT_BY_TYPE.get(type) ?? DEFAULT_ROOM_MODEL_CREDITS.Simple
 }
 
 // Fotos adicionales por tipo para la galeria del detalle de habitacion
