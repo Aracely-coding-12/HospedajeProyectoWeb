@@ -17,6 +17,11 @@ const POIS = {
     lng: -71.9785,
     category: 'Centro histórico',
     image: '/cusco/plaza-armas.jpg',
+    images: ['/cusco/plaza-armas.jpg', '/cusco/plaza-armas-2.jpg'],
+    facts: [
+      'En la época inca aquí estaba el Huacaypata, el centro ceremonial del imperio.',
+      'Está rodeada de arquerías coloniales construidas sobre muros incas.',
+    ],
   },
   catedral: {
     id: 'catedral',
@@ -25,6 +30,11 @@ const POIS = {
     lng: -71.9787,
     category: 'Centro histórico',
     image: '/cusco/catedral.jpg',
+    images: ['/cusco/catedral.jpg', '/cusco/catedral-2.jpg'],
+    facts: [
+      'Se construyó sobre el antiguo templo inca de Kiswarkancha, con piedras de Sacsayhuamán.',
+      'Tardó casi 100 años en terminarse: de 1560 a 1654.',
+    ],
   },
   qorikancha: {
     id: 'qorikancha',
@@ -33,6 +43,11 @@ const POIS = {
     lng: -71.9766,
     category: 'Centro histórico',
     image: '/cusco/qorikancha.jpg',
+    images: ['/cusco/qorikancha.jpg', '/cusco/qorikancha-2.jpg'],
+    facts: [
+      "Su nombre significa 'recinto de oro': fue el templo más importante del imperio inca.",
+      'Sobre sus muros los españoles construyeron el convento de Santo Domingo.',
+    ],
   },
   sanBlas: {
     id: 'san-blas',
@@ -41,6 +56,11 @@ const POIS = {
     lng: -71.9748,
     category: 'Centro histórico',
     image: '/cusco/san-blas.jpg',
+    images: ['/cusco/san-blas.jpg', '/cusco/san-blas-2.jpg'],
+    facts: [
+      'Es el barrio de los artesanos de Cusco, con calles empedradas desde la colonia.',
+      'Su mirador tiene una de las mejores vistas de los techos de tejas del centro.',
+    ],
   },
   sanPedro: {
     id: 'mercado-san-pedro',
@@ -49,6 +69,11 @@ const POIS = {
     lng: -71.9808,
     category: 'Centro histórico',
     image: '/cusco/mercado-san-pedro.jpg',
+    images: ['/cusco/mercado-san-pedro.jpg', '/cusco/mercado-san-pedro-2.jpg'],
+    facts: [
+      'Fue diseñado por Gustave Eiffel y se inauguró en 1925.',
+      'Tiene más de 300 puestos: desde frutas andinas hasta jugos recién hechos.',
+    ],
   },
   sacsayhuaman: {
     id: 'sacsayhuaman',
@@ -57,6 +82,11 @@ const POIS = {
     lng: -71.982,
     category: 'Arqueológico',
     image: '/cusco/sacsayhuaman.jpg',
+    images: ['/cusco/sacsayhuaman.jpg', '/cusco/sacsayhuaman-2.jpg'],
+    facts: [
+      'Sus bloques de piedra pesan hasta 200 toneladas y encajan sin usar argamasa.',
+      "Su nombre en quechua significa 'halcón satisfecho'.",
+    ],
   },
   qenqo: {
     id: 'qenqo',
@@ -65,6 +95,11 @@ const POIS = {
     lng: -71.9745,
     category: 'Arqueológico',
     image: '/cusco/qenqo.jpg',
+    images: ['/cusco/qenqo.jpg', '/cusco/qenqo-2.jpg'],
+    facts: [
+      "Su nombre significa 'laberinto', por los canales tallados en la roca.",
+      'Se cree que se usaba para rituales relacionados con la Pachamama.',
+    ],
   },
   pukaPukara: {
     id: 'puka-pukara',
@@ -73,6 +108,11 @@ const POIS = {
     lng: -71.9625,
     category: 'Arqueológico',
     image: '/cusco/puka-pukara.jpg',
+    images: ['/cusco/puka-pukara.jpg', '/cusco/puka-pukara-2.jpg'],
+    facts: [
+      "Su nombre significa 'fortaleza roja', por el color que toma la piedra al atardecer.",
+      'Se cree que funcionó como puesto de control hacia el Valle Sagrado.',
+    ],
   },
   tambomachay: {
     id: 'tambomachay',
@@ -81,6 +121,11 @@ const POIS = {
     lng: -71.9608,
     category: 'Arqueológico',
     image: '/cusco/tambomachay.jpg',
+    images: ['/cusco/tambomachay.jpg', '/cusco/tambomachay-2.jpg'],
+    facts: [
+      "Se le conoce como 'el baño del inca' por sus canales y fuentes ceremoniales.",
+      'El agua sigue corriendo hoy por el mismo sistema hidráulico inca original.',
+    ],
   },
   cristoBlanco: {
     id: 'cristo-blanco',
@@ -89,6 +134,11 @@ const POIS = {
     lng: -71.9797,
     category: 'Mirador',
     image: '/cusco/cristo-blanco.jpg',
+    images: ['/cusco/cristo-blanco.jpg', '/cusco/cristo-blanco-2.jpg'],
+    facts: [
+      'La estatua fue un regalo de la comunidad árabe-palestina residente en Cusco, en 1945.',
+      'Desde aquí se ve toda la ciudad, con Sacsayhuamán a pocos minutos caminando.',
+    ],
   },
   pisac: {
     id: 'pisac',
@@ -97,6 +147,11 @@ const POIS = {
     lng: -71.8472,
     category: 'Valle Sagrado',
     image: '/cusco/pisac.jpg',
+    images: ['/cusco/pisac.jpg', '/cusco/pisac-2.jpg'],
+    facts: [
+      'Sus andenes agrícolas todavía se usan para cultivar como hace 500 años.',
+      'El mercado de Pisac es uno de los más coloridos y tradicionales del valle.',
+    ],
   },
   ollantaytambo: {
     id: 'ollantaytambo',
@@ -105,6 +160,11 @@ const POIS = {
     lng: -72.2633,
     category: 'Valle Sagrado',
     image: '/cusco/ollantaytambo.jpg',
+    images: ['/cusco/ollantaytambo.jpg', '/cusco/ollantaytambo-2.jpg'],
+    facts: [
+      'Es uno de los pocos pueblos con trazado urbano inca original todavía habitado.',
+      'Su fortaleza fue de los pocos lugares donde los incas vencieron a los españoles en batalla.',
+    ],
   },
   aguasCalientes: {
     id: 'aguas-calientes',
@@ -113,6 +173,11 @@ const POIS = {
     lng: -72.5255,
     category: 'Machu Picchu',
     image: '/cusco/aguas-calientes.jpg',
+    images: ['/cusco/aguas-calientes.jpg', '/cusco/aguas-calientes-2.jpg'],
+    facts: [
+      'Su nombre real es Machu Picchu Pueblo; solo se llega en tren o caminando.',
+      'Debe su nombre a las aguas termales naturales que hay cerca del pueblo.',
+    ],
   },
   machuPicchu: {
     id: 'machu-picchu',
@@ -121,6 +186,11 @@ const POIS = {
     lng: -72.545,
     category: 'Machu Picchu',
     image: '/cusco/machu-picchu.jpg',
+    images: ['/cusco/machu-picchu.jpg', '/cusco/machu-picchu-2.jpg'],
+    facts: [
+      "Se dio a conocer al mundo en 1911, aunque nunca estuvo realmente 'perdida' para los locales.",
+      'Es Patrimonio de la Humanidad y una de las nuevas 7 maravillas del mundo.',
+    ],
   },
   chocoMuseo: {
     id: 'choco-museo',
@@ -129,6 +199,11 @@ const POIS = {
     lng: -71.9774,
     category: 'En familia',
     image: '/cusco/choco-museo.jpg',
+    images: ['/cusco/choco-museo.jpg', '/cusco/choco-museo-2.jpg'],
+    facts: [
+      'El cacao se cultiva en la selva peruana desde hace más de 5,000 años.',
+      'Aquí puedes hacer tu propio chocolate desde el grano, a mano.',
+    ],
   },
   planetario: {
     id: 'planetario-cusco',
@@ -137,6 +212,10 @@ const POIS = {
     lng: -71.9524,
     category: 'En familia',
     image: '/cusco/planetario-cusco.jpg',
+    facts: [
+      'Los incas tenían su propia astronomía: seguían constelaciones oscuras, no solo estrellas.',
+      'Las funciones nocturnas muestran el cielo de Cusco con telescopios reales.',
+    ],
   },
 }
 

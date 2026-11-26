@@ -10,6 +10,7 @@ import ReservaCliente from './ReservaCliente.jsx'
 import ServicisCliente from './ServicisCliente.jsx'
 import PerfilCliente from './perfilCliente.jsx'
 import PromocionesCliente from './promocionesCliente.jsx'
+import TripPlanCliente from './TripPlanCliente.jsx'
 import { PromotionCard, RoomCard, ServiceCard } from '../components/cliente/cards.jsx'
 import {
   ArrowRightIcon,
@@ -805,9 +806,20 @@ function VistaPrincipalCliente({
         }
         onCreateReservation={onCreateReservation}
         onCancelReservation={onCancelReservation}
-        onSaveTripPlan={onSaveTripPlan}
+        onViewPlan={(reservationId) => navigate('plan', { reservationId })}
         onGoToPayment={(reservationId) => navigate('pago', { reservationId })}
         onRequireAuth={(mode = 'login') => openAuth(mode)}
+      />
+    )
+  } else if (view === 'plan') {
+    content = (
+      <TripPlanCliente
+        key={`plan-${bookingDraft.reservationId ?? ''}`}
+        session={session}
+        data={data}
+        reservationId={bookingDraft.reservationId}
+        onSavePlan={onSaveTripPlan}
+        onBack={() => navigate('reserva')}
       />
     )
   } else if (view === 'pago') {

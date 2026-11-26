@@ -47,15 +47,42 @@ export function straightLine(from, to, steps = 24) {
   })
 }
 
+// El servidor público no garantiza disponibilidad: si no responde rápido, se
+// corta y se cae al respaldo en línea recta en vez de dejar el tramo
+// "calculando" para siempre (y el botón de reproducir sin aparecer nunca).
+const OSRM_TIMEOUT_MS = 6000
+
 async function fetchOsrm(leg, signal) {
   const base = OSRM_PROFILES[leg.mode]
   const coords = `${toCoord(leg.from).join(',')};${toCoord(leg.to).join(',')}`
-  const response = await fetch(`${base}/${coords}?overview=full&geometries=geojson`, { signal })
-  if (!response.ok) throw new Error(`OSRM respondió ${response.status}`)
-  const payload = await response.json()
-  const geometry = payload?.routes?.[0]?.geometry?.coordinates
-  if (!Array.isArray(geometry) || geometry.length < 2) throw new Error('OSRM sin ruta')
-  return geometry
+
+  const controller = new AbortController()
+  let timedOut = false
+  const forwardAbort = () => controller.abort()
+  signal?.addEventListener('abort', forwardAbort)
+  const timer = setTimeout(() => {
+    timedOut = true
+    controller.abort()
+  }, OSRM_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(`${base}/${coords}?overview=full&geometries=geojson`, {
+      signal: controller.signal,
+    })
+    if (!response.ok) throw new Error(`OSRM respondió ${response.status}`)
+    const payload = await response.json()
+    const geometry = payload?.routes?.[0]?.geometry?.coordinates
+    if (!Array.isArray(geometry) || geometry.length < 2) throw new Error('OSRM sin ruta')
+    return geometry
+  } catch (error) {
+    // Un abort por timeout no debe propagarse como AbortError (que el
+    // llamador trata como "se canceló, ignorar"): debe caer al respaldo.
+    if (timedOut) throw new Error('OSRM no respondió a tiempo', { cause: error })
+    throw error
+  } finally {
+    clearTimeout(timer)
+    signal?.removeEventListener('abort', forwardAbort)
+  }
 }
 
 // La vía férrea Cusco → Machu Picchu pasa por Poroy y Ollantaytambo. No hay

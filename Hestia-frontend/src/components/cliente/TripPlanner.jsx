@@ -12,7 +12,9 @@ import {
   CheckIcon,
   ClockIcon,
   CloseIcon,
+  HotelIcon,
   MapPinIcon,
+  PencilIcon,
   PlusIcon,
   SparklesIcon,
 } from './icons.jsx'
@@ -291,14 +293,14 @@ function TripPlanner({ reservation, onSavePlan }) {
             type="button"
             onClick={() => selectDay(index)}
             aria-current={activeDay === index}
-            className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
+            className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
               activeDay === index
                 ? 'border-amber-400 bg-amber-400 text-black'
                 : 'border-amber-400/25 text-stone-300 hover:border-amber-400/50'
             }`}
           >
             Día {item.day}
-            {item.custom && ' ✎'}
+            {item.custom && <PencilIcon className="h-3 w-3" />}
           </button>
         ))}
       </div>
@@ -366,9 +368,9 @@ function TripPlanner({ reservation, onSavePlan }) {
                 <button
                   type="button"
                   onClick={() => setDraft(day.pois.map((poi) => poi.id))}
-                  className="rounded-full border border-amber-400 px-3 py-1 text-[11px] font-semibold text-amber-200"
+                  className="inline-flex items-center gap-1 rounded-full border border-amber-400 px-3 py-1 text-[11px] font-semibold text-amber-200"
                 >
-                  ✎ Personalizar mi ruta
+                  <PencilIcon className="h-3 w-3" /> Personalizar mi ruta
                 </button>
               </div>
             )}
@@ -382,13 +384,21 @@ function TripPlanner({ reservation, onSavePlan }) {
                 <li key={`${stop.id}-${index}`} className="flex items-center gap-1">
                   {index > 0 && <ArrowRightIcon className="h-3 w-3 text-stone-600" />}
                   <span
-                    className={`rounded-full px-2 py-0.5 transition ${
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 transition ${
                       index === activeStop
                         ? 'bg-amber-400 font-semibold text-black'
                         : 'bg-white/5 text-stone-300'
                     }`}
                   >
-                    {stop.id === HOTEL.id ? '🏨 ' : ''}
+                    {stop.image ? (
+                      <img
+                        src={stop.image}
+                        alt=""
+                        className="h-4 w-4 rounded-full object-cover"
+                      />
+                    ) : stop.id === HOTEL.id ? (
+                      <HotelIcon className="h-3 w-3" />
+                    ) : null}
                     {stop.name}
                   </span>
                 </li>

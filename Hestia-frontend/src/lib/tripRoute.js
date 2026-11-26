@@ -121,8 +121,8 @@ export function lerpAngle(from, to, t) {
 // Duración de la animación de un tramo: los tramos largos no deben durar
 // minutos, los cortos no deben ser un parpadeo.
 export function legDurationMs(lengthKm, mode) {
-  const perKm = mode === 'pie' ? 2200 : 260
-  return Math.min(Math.max(lengthKm * perKm, 1800), 9000)
+  const perKm = mode === 'pie' ? 2800 : 340
+  return Math.min(Math.max(lengthKm * perKm, 2400), 13000)
 }
 
 // Zoom de seguimiento según el modo: a pie se ve la calle, en tren el valle.

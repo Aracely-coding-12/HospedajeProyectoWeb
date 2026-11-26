@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { SmartphoneIcon } from './icons.jsx'
 
 let modelViewerReady = null
 
@@ -61,8 +62,8 @@ function Room3DViewer({ room, modelSrc }) {
           Modelo referencial para mostrar la distribución del espacio · "Bedroom" por Poly by
           Google (CC BY 3.0)
         </p>
-        <span className="shrink-0 text-[10px] font-medium text-amber-300">
-          📱 Toca el ícono AR para verla en tu espacio
+        <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-medium text-amber-300">
+          <SmartphoneIcon className="h-3 w-3" /> Toca el ícono AR para verla en tu espacio
         </span>
       </div>
     </div>
